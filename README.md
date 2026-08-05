@@ -1,21 +1,21 @@
-# Home Assistant FlexGet
+# 🎬 Home Assistant FlexGet
 
 A local-polling Home Assistant custom integration for monitoring one or more
 [FlexGet](https://flexget.com/) daemon APIs. Every API endpoint is a separate
 config entry and Home Assistant device, so several configurations on the same
 host are supported when they use different ports.
 
-## Features
+## ✨ Features
 
-- Manual setup with host, port, API path, and token
-- Optional advanced zeroconf discovery through `_flexget._tcp.local.`
-- Duplicate suppression by normalized `host:port`
-- One shared coordinator request cycle per instance
-- Connectivity, version, task count, queue, active task, and update sensors
-- Token reauthentication, display-name/token/polling options, and redacted diagnostics
-- Read-only API access; the integration cannot execute tasks or manage daemons
+- 🧭 Manual setup with host, port, API path, and token
+- 📡 Optional advanced zeroconf discovery through `_flexget._tcp.local.`
+- 🧩 Duplicate suppression by normalized `host:port`
+- 🔄 One shared coordinator request cycle per instance
+- 📊 Connectivity, version, task count, queue, active task, and update sensors
+- 🔐 Token reauthentication, display-name/token/polling options, and redacted diagnostics
+- 👀 Read-only API access; the integration cannot execute tasks or manage daemons
 
-## Install
+## 🚀 Install
 
 Copy `custom_components/flexget` into Home Assistant's `custom_components`
 directory and restart Home Assistant. Add **FlexGet** from
@@ -30,10 +30,11 @@ with its host, API port, and token. This is the normal and recommended setup:
    and a recognizable instance name.
 4. Repeat for every daemon. Ports do not need to be consecutive.
 
-The integration sends the token only in the `Authorization: Token ...` header.
-Tokens are never exposed as entity attributes or diagnostics.
+> 🔐 **Security:** The integration sends the token only in the
+> `Authorization: Token ...` header.
+> Tokens are never exposed as entity attributes or diagnostics.
 
-## Advanced: optional Avahi discovery
+## 📡 Advanced: optional Avahi discovery
 
 FlexGet does not advertise its API by default. Most users should use manual
 setup above. If you administer the FlexGet host, you can optionally configure
@@ -71,10 +72,10 @@ The instance should then appear as a discovered integration under
 **Settings > Devices & services**. If it does not, manual setup remains fully
 supported and provides the same entities and behavior.
 
-Discovery records are treated as untrusted hints. Setup completes only after
-the user supplies a token and the authenticated version endpoint succeeds.
+> 🛡️ **Discovery is only a hint:** Setup completes only after the user supplies
+> a token and the authenticated version endpoint succeeds.
 
-## Development
+## 🛠️ Development
 
 Create a Python virtual environment, install `requirements_test.txt`, then run:
 
