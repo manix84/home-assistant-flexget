@@ -8,11 +8,21 @@ from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import FlexGetConfigEntry
-from .const import ATTR_API_VERSION, ATTR_LATEST_VERSION, ATTR_PHASE, ATTR_PLUGIN, ATTR_STATE_SINCE
+from .const import (
+    ATTR_ACCEPTED_AT,
+    ATTR_API_VERSION,
+    ATTR_CONFIGURED_TASKS,
+    ATTR_PHASE,
+    ATTR_PLUGIN,
+    ATTR_QUEUED_TASKS,
+    ATTR_SCHEDULED_TASKS,
+    ATTR_STATE_SINCE,
+)
 from .entity import FlexGetEntity
 from .models import FlexGetData
 
@@ -27,21 +37,36 @@ DESCRIPTIONS = (
     FlexGetSensorDescription(
         key="version",
         translation_key="version",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.version,
-        attributes_fn=lambda data: {
-            ATTR_LATEST_VERSION: data.latest_version,
-            ATTR_API_VERSION: data.api_version,
-        },
+        attributes_fn=lambda data: {ATTR_API_VERSION: data.api_version},
     ),
     FlexGetSensorDescription(
-        key="task_count", translation_key="task_count", value_fn=lambda data: data.task_count
+        key="latest_version",
+        translation_key="latest_version",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data.latest_version,
     ),
     FlexGetSensorDescription(
-        key="queued_count", translation_key="queued_count", value_fn=lambda data: data.queued_count
+        key="task_count",
+        translation_key="task_count",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.task_count,
+        attributes_fn=lambda data: {ATTR_CONFIGURED_TASKS: list(data.configured_tasks)},
+    ),
+    FlexGetSensorDescription(
+        key="queued_count",
+        translation_key="queued_count",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.queued_count,
+        attributes_fn=lambda data: {ATTR_QUEUED_TASKS: list(data.queued_tasks)},
     ),
     FlexGetSensorDescription(
         key="active_task",
         translation_key="active_task",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.active_task.name if data.active_task else None,
         attributes_fn=lambda data: (
             {
@@ -54,9 +79,32 @@ DESCRIPTIONS = (
         ),
     ),
     FlexGetSensorDescription(
+        key="schedule_count",
+        translation_key="schedule_count",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.schedule_count,
+        attributes_fn=lambda data: {ATTR_SCHEDULED_TASKS: list(data.scheduled_tasks)},
+    ),
+    FlexGetSensorDescription(
+        key="accepted_count",
+        translation_key="accepted_count",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.accepted_count,
+    ),
+    FlexGetSensorDescription(
+        key="last_accepted_task",
+        translation_key="last_accepted_task",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data.last_accepted_task,
+        attributes_fn=lambda data: {ATTR_ACCEPTED_AT: data.last_accepted_at},
+    ),
+    FlexGetSensorDescription(
         key="last_successful_update",
         translation_key="last_successful_update",
         device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.last_success,
     ),
 )

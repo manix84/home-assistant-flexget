@@ -54,13 +54,19 @@
   },
   "entity": {
     "binary_sensor": {
-      "connectivity": {"name": "Connectivity"}
+      "connectivity": {"name": "Connectivity"},
+      "task_running": {"name": "Task running"},
+      "update_available": {"name": "Update available"}
     },
     "sensor": {
       "version": {"name": "Version"},
+      "latest_version": {"name": "Latest version"},
       "task_count": {"name": "Configured tasks"},
       "queued_count": {"name": "Queued tasks"},
       "active_task": {"name": "Active task"},
+      "schedule_count": {"name": "Schedules"},
+      "accepted_count": {"name": "Accepted entries"},
+      "last_accepted_task": {"name": "Last accepted task"},
       "last_successful_update": {"name": "Last successful update"}
     }
   }

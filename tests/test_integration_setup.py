@@ -1,0 +1,85 @@
+"""End-to-end setup tests for FlexGet entities."""
+
+from unittest.mock import AsyncMock, patch
+
+from homeassistant.const import CONF_HOST, CONF_PORT, EntityCategory
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from custom_components.flexget.const import CONF_API_PATH, CONF_TOKEN, DOMAIN
+
+
+async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -> None:
+    """Set up one entry and verify its shared snapshot entities."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Sort",
+        unique_id="10.0.0.102:5051",
+        data={
+            CONF_HOST: "10.0.0.102",
+            CONF_PORT: 5051,
+            CONF_API_PATH: "/api",
+            CONF_TOKEN: "secret-token",
+        },
+    )
+    entry.add_to_hass(hass)
+
+    with (
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_version",
+            AsyncMock(
+                return_value={
+                    "flexget_version": "3.19.31",
+                    "latest_version": "3.20.0",
+                    "api_version": "1.8.0",
+                }
+            ),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_tasks",
+            AsyncMock(return_value=["extract_all", "sort_anime"]),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_queue",
+            AsyncMock(return_value=[]),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_schedules",
+            AsyncMock(return_value=[{"tasks": ["extract_*", "sort_*"]}]),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_history_summary",
+            AsyncMock(
+                return_value=(
+                    [{"task": "sort_anime", "time": "2026-08-05T13:05:49.010966"}],
+                    42,
+                )
+            ),
+        ),
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    task_count = hass.states.get("sensor.sort_configured_tasks")
+    assert task_count is not None
+    assert task_count.state == "2"
+    assert task_count.attributes["configured_tasks"] == ["extract_all", "sort_anime"]
+
+    queued_count = hass.states.get("sensor.sort_queued_tasks")
+    assert queued_count is not None
+    assert queued_count.state == "0"
+    assert hass.states.get("binary_sensor.sort_task_running").state == "off"
+    assert hass.states.get("binary_sensor.sort_update_available").state == "on"
+    assert hass.states.get("sensor.sort_schedules").state == "1"
+    assert hass.states.get("sensor.sort_accepted_entries").state == "42"
+    assert hass.states.get("sensor.sort_last_accepted_task").state == "sort_anime"
+
+    registry = er.async_get(hass)
+    for entity_id in (
+        "sensor.sort_configured_tasks",
+        "sensor.sort_queued_tasks",
+        "sensor.sort_schedules",
+        "sensor.sort_accepted_entries",
+    ):
+        assert registry.async_get(entity_id).entity_category is EntityCategory.DIAGNOSTIC

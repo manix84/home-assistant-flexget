@@ -38,6 +38,26 @@ async def test_client_sends_token_and_queries_version(aiohttp_server, socket_ena
         assert (await client.async_get_version())["flexget_version"] == "3.15.31"
 
 
+async def test_client_reads_history_total_count(aiohttp_server, socket_enabled) -> None:
+    """Return pagination metadata alongside the newest history entry."""
+
+    async def history(request: web.Request) -> web.Response:
+        assert request.query == {"per_page": "1", "page": "1", "order": "desc"}
+        return web.json_response(
+            [{"task": "sort", "time": "2026-08-05T13:05:49.010966"}],
+            headers={"Total-Count": "123"},
+        )
+
+    app = web.Application()
+    app.router.add_get("/api/history/", history)
+    server = await aiohttp_server(app)
+    async with ClientSession() as session:
+        client = FlexGetClient(session, FlexGetEndpoint("127.0.0.1", server.port), "token")
+        data, count = await client.async_get_history_summary()
+    assert count == 123
+    assert data[0]["task"] == "sort"
+
+
 @pytest.mark.parametrize(
     ("status", "error"),
     [

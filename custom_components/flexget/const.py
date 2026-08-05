@@ -18,9 +18,14 @@ MIN_SCAN_INTERVAL: Final = 10
 DEFAULT_TIMEOUT: Final = 10
 
 UPDATE_INTERVAL: Final = timedelta(seconds=DEFAULT_SCAN_INTERVAL)
+EXTENDED_UPDATE_INTERVAL: Final = timedelta(minutes=5)
 
 ATTR_API_VERSION: Final = "api_version"
 ATTR_LATEST_VERSION: Final = "latest_version"
 ATTR_PHASE: Final = "phase"
 ATTR_PLUGIN: Final = "plugin"
 ATTR_STATE_SINCE: Final = "state_since"
+ATTR_CONFIGURED_TASKS: Final = "configured_tasks"
+ATTR_QUEUED_TASKS: Final = "queued_tasks"
+ATTR_ACCEPTED_AT: Final = "accepted_at"
+ATTR_SCHEDULED_TASKS: Final = "scheduled_tasks"

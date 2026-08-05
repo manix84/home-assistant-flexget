@@ -30,8 +30,15 @@ async def async_get_config_entry_diagnostics(
                 "latest_version": data.latest_version,
                 "api_version": data.api_version,
                 "task_count": data.task_count,
+                "configured_tasks": data.configured_tasks,
                 "queued_count": data.queued_count,
+                "queued_tasks": data.queued_tasks,
                 "active_task": data.active_task.name if data.active_task else None,
+                "schedule_count": data.schedule_count,
+                "scheduled_tasks": data.scheduled_tasks,
+                "accepted_count": data.accepted_count,
+                "last_accepted_task": data.last_accepted_task,
+                "last_accepted_at": data.last_accepted_at,
                 "last_success": data.last_success.isoformat(),
             }
             if data

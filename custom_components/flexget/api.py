@@ -101,7 +101,26 @@ class FlexGetClient:
         """Fetch queued and active task state."""
         return await self._get("tasks/queue/")
 
+    async def async_get_schedules(self) -> Any:
+        """Fetch configured daemon schedules."""
+        return await self._get("schedules/")
+
+    async def async_get_history_summary(self) -> tuple[Any, int | None]:
+        """Fetch the newest accepted entry and total history count."""
+        data, headers = await self._get_with_headers(
+            "history/", params={"per_page": "1", "page": "1", "order": "desc"}
+        )
+        total = headers.get("Total-Count")
+        try:
+            return data, int(total) if total is not None else None
+        except ValueError:
+            return data, None
+
     async def _get(self, endpoint: str, **kwargs: Any) -> Any:
+        data, _headers = await self._get_with_headers(endpoint, **kwargs)
+        return data
+
+    async def _get_with_headers(self, endpoint: str, **kwargs: Any) -> tuple[Any, dict[str, str]]:
         url = f"{self.endpoint.base_url}/{quote(endpoint, safe='/')}"
         try:
             async with async_timeout.timeout(self._timeout):
@@ -110,7 +129,8 @@ class FlexGetClient:
                     headers={"Authorization": f"Token {self._token}"},
                     **kwargs,
                 )
-                return await self._decode_response(response)
+                data = await self._decode_response(response)
+                return data, dict(response.headers)
         except TimeoutError as err:
             raise FlexGetTimeoutError("FlexGet request timed out") from err
         except ClientError as err:

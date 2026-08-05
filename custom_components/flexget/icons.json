@@ -1,0 +1,20 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "connectivity": {"default": "mdi:lan-connect"},
+      "task_running": {"default": "mdi:progress-clock"},
+      "update_available": {"default": "mdi:update"}
+    },
+    "sensor": {
+      "version": {"default": "mdi:package-variant-closed"},
+      "latest_version": {"default": "mdi:package-up"},
+      "task_count": {"default": "mdi:format-list-numbered"},
+      "queued_count": {"default": "mdi:tray-full"},
+      "active_task": {"default": "mdi:progress-wrench"},
+      "schedule_count": {"default": "mdi:calendar-clock"},
+      "accepted_count": {"default": "mdi:history"},
+      "last_accepted_task": {"default": "mdi:check-circle-outline"},
+      "last_successful_update": {"default": "mdi:update"}
+    }
+  }
+}

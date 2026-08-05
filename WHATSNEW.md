@@ -17,6 +17,10 @@ for multiple daemon instances.
 - Connectivity, installed version, configured task count, queued task count,
   active task, and last successful update entities.
 - Active-task phase, plugin, and unchanged-state timestamp attributes.
+- Diagnostic-style count sensors with configured, queued, and scheduled task
+  names available as attributes instead of measurement-style graph entities.
+- Schedule count, accepted-history count, latest version, last accepted task,
+  task-running, and update-available entities.
 - Reauthentication and options for token, display name, and polling interval.
 - Credential-redacted diagnostics.
 - HACS metadata, automated tests, linting, and repository validation.
