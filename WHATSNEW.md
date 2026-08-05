@@ -20,6 +20,8 @@ for multiple daemon instances.
 - Reauthentication and options for token, display name, and polling interval.
 - Credential-redacted diagnostics.
 - HACS metadata, automated tests, linting, and repository validation.
+- Coordinated SemVer checks and automatic Release Please version bumps across
+  release metadata and notes.
 
 ### 🔐 Security and privacy
 

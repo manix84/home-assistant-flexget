@@ -2,11 +2,14 @@
 
 <!-- Describe the outcome and why it is needed. -->
 
+<!-- Use a Conventional Commit PR title: fix:, feat:, feat!:, docs:, etc. -->
+
 ## ✅ How was it tested?
 
 - [ ] `ruff format --check .`
 - [ ] `ruff check .`
 - [ ] `pytest -q`
+- [ ] `python scripts/check_version.py`
 - [ ] `git diff --check`
 - [ ] Live Home Assistant/FlexGet verification, if applicable
 

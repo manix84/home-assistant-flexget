@@ -92,4 +92,9 @@ Create a Python virtual environment, install `requirements_test.txt`, then run:
 pytest
 ruff check .
 ruff format --check .
+python scripts/check_version.py
 ```
+
+Versions follow SemVer and are coordinated automatically by Release Please.
+Conventional Commit prefixes (`fix:`, `feat:`, and breaking `!`) select patch,
+minor, and major bumps respectively. 🏷️

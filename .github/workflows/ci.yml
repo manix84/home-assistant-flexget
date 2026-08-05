@@ -20,6 +20,7 @@ jobs:
       - run: pip install -r requirements_test.txt
       - run: ruff format --check .
       - run: ruff check .
+      - run: python scripts/check_version.py
       - run: pytest -q
 
   validate-hacs:

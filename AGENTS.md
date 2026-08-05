@@ -139,11 +139,25 @@ Update `WHATSNEW.md` for user-visible changes. Update `README.md`, `PRIVACY.md`,
 
 - Lead handoffs with the outcome, then verification and any remaining limits.
 - Be direct about assumptions, unverified live behavior, and blockers.
-- Use concise, imperative commit subjects without emoji, for example:
-  `Add zeroconf config flow tests`.
+- Use Conventional Commit subjects without emoji so Release Please can select
+  the correct SemVer bump: `fix:` for patches, `feat:` for minor releases, and
+  `feat!:`/`fix!:` for breaking major releases. For example:
+  `fix: handle empty queue responses`.
 - Keep commits focused and reviewable. Do not mix cleanup with behavior changes
   unless the cleanup is required for the change.
 - Never claim live FlexGet or Home Assistant validation unless it actually ran.
+
+## 🏷️ Versioning and releases
+
+- `version.txt` is the human-readable source version. The integration manifest,
+  `pyproject.toml`, and the current `WHATSNEW.md` heading must match it.
+- Never bump version files independently or by hand during ordinary feature
+  work. Release Please updates them together in its release pull request.
+- Use Conventional Commit prefixes accurately; they determine the automatic
+  SemVer bump.
+- Run `.venv/bin/python scripts/check_version.py` before handoff.
+- Merging the Release Please pull request creates the `vX.Y.Z` tag and GitHub
+  release. Do not create competing tags manually.
 
 When uncertain, favor the safer read-only behavior and ask before expanding the
 integration's authority. 🛡️

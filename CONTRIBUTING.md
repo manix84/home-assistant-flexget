@@ -33,6 +33,18 @@ git diff --check
 
 Please also validate any edited JSON with `python -m json.tool`.
 
+## 🏷️ Commit and release versions
+
+Use Conventional Commit subjects so release versions are selected automatically:
+
+- `fix: ...` produces a patch bump;
+- `feat: ...` produces a minor bump;
+- `feat!: ...`, `fix!: ...`, or a `BREAKING CHANGE:` footer produces a major bump;
+- `docs:`, `test:`, `ci:`, and `chore:` normally do not trigger a release.
+
+Release Please maintains `version.txt`, the Home Assistant manifest,
+`pyproject.toml`, and `WHATSNEW.md` together. Do not bump only one of them.
+
 ## 🧪 What good tests cover
 
 - the successful path and realistic API response shapes;
