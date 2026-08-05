@@ -12,6 +12,9 @@
           "api_path": "API path",
           "token": "API token",
           "instance_name": "Instance name"
+        },
+        "data_description": {
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. If you use a specific configuration file, run `flexget -c ~/.config/flexget/config-*.yml web showtoken` and adjust the path or pattern as needed."
         }
       },
       "zeroconf_confirm": {
@@ -20,12 +23,18 @@
         "data": {
           "token": "API token",
           "instance_name": "Instance name"
+        },
+        "data_description": {
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. If you use a specific configuration file, run `flexget -c ~/.config/flexget/config-*.yml web showtoken` and adjust the path or pattern as needed."
         }
       },
       "reauth_confirm": {
         "title": "Reauthenticate FlexGet",
         "description": "Enter a valid API token.",
-        "data": {"token": "API token"}
+        "data": {"token": "API token"},
+        "data_description": {
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. If you use a specific configuration file, run `flexget -c ~/.config/flexget/config-*.yml web showtoken` and adjust the path or pattern as needed."
+        }
       }
     },
     "error": {
@@ -49,6 +58,9 @@
           "instance_name": "Instance name",
           "token": "API token",
           "scan_interval": "Polling interval (seconds)"
+        },
+        "data_description": {
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. If you use a specific configuration file, run `flexget -c ~/.config/flexget/config-*.yml web showtoken` and adjust the path or pattern as needed."
         }
       }
     }

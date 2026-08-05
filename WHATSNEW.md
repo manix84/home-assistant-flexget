@@ -43,6 +43,12 @@ for multiple daemon instances.
 - Zeroconf confirmation titles no longer generate missing-placeholder errors in
   the Home Assistant frontend.
 
+### 🧭 Improved
+
+- API token fields now explain how to retrieve a token with
+  `flexget web showtoken`, including an example for installations with multiple
+  configuration files.
+
 ### 📝 Documentation
 
 - Manual setup is documented as the normal path.

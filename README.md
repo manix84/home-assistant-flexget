@@ -23,8 +23,23 @@ Copy `custom_components/flexget` into Home Assistant's `custom_components`
 directory and restart Home Assistant. Add **FlexGet** from
 **Settings > Devices & services > Add integration**.
 
-Create an API token in each FlexGet daemon and configure each instance manually
-with its host, API port, and token. This is the normal and recommended setup:
+Find the API token for each daemon by running this command on the machine that
+hosts FlexGet:
+
+```console
+flexget web showtoken
+```
+
+If the daemon uses a specific configuration file, pass it with `-c`. For
+example, an installation with several FlexGet configs might use:
+
+```console
+flexget -c ~/.config/flexget/config-*.yml web showtoken
+```
+
+Adjust the path or filename pattern to select the configuration used by the
+daemon you are adding. Then configure each instance manually with its host, API
+port, and token. This is the normal and recommended setup:
 
 1. In Home Assistant, open **Settings > Devices & services**.
 2. Select **Add integration**, search for **FlexGet**, and select it.
