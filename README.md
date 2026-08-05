@@ -1,5 +1,7 @@
 # 🎬 Home Assistant FlexGet
 
+![FlexGet](assets/flexget-color.png)
+
 A local-polling Home Assistant custom integration for monitoring one or more
 [FlexGet](https://flexget.com/) daemon APIs. Every API endpoint is a separate
 config entry and Home Assistant device, so several configurations on the same
