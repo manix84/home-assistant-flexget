@@ -1,0 +1,11 @@
+homeassistant==2025.8.1
+# Pin transitive dependencies from Home Assistant 2025.8.1 requirements_all.txt.
+# Their lower bounds otherwise resolve against newer, incompatible releases.
+habluetooth==4.0.2
+bluetooth-data-tools==1.28.2
+pycares==4.9.0
+pytest>=8.3.0
+pytest-aiohttp>=1.1.0
+pytest-cov>=6.0.0
+pytest-homeassistant-custom-component==0.13.270
+ruff>=0.12.0

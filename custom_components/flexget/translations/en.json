@@ -1,0 +1,65 @@
+{
+  "title": "FlexGet",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to FlexGet",
+        "description": "Configure one FlexGet API instance manually. Add another entry for each additional API port. Optional Avahi discovery is documented as an advanced setup method.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "api_path": "API path",
+          "token": "API token",
+          "instance_name": "Instance name"
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Set up {name}",
+        "description": "FlexGet was discovered at {host}:{port}. Enter its API token to verify and add it.",
+        "data": {
+          "token": "API token",
+          "instance_name": "Instance name"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate FlexGet",
+        "description": "Enter a valid API token.",
+        "data": {"token": "API token"}
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid API token",
+      "invalid_api_path": "Enter a path such as /api",
+      "invalid_response": "The server returned an invalid response",
+      "timeout": "The connection timed out",
+      "unsupported_api": "This FlexGet API is not supported"
+    },
+    "abort": {
+      "already_configured": "This FlexGet API instance is already configured",
+      "reauth_successful": "Reauthentication was successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "FlexGet options",
+        "data": {
+          "instance_name": "Instance name",
+          "token": "API token",
+          "scan_interval": "Polling interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {"connectivity": {"name": "Connectivity"}},
+    "sensor": {
+      "version": {"name": "Version"},
+      "task_count": {"name": "Configured tasks"},
+      "queued_count": {"name": "Queued tasks"},
+      "active_task": {"name": "Active task"},
+      "last_successful_update": {"name": "Last successful update"}
+    }
+  }
+}
