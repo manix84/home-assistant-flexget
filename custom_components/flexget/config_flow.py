@@ -97,7 +97,6 @@ class FlexGetConfigFlow(ConfigFlow, domain=DOMAIN):
         }
         await self.async_set_unique_id(FlexGetEndpoint(host, discovery_info.port).unique_id)
         self._abort_if_unique_id_configured()
-        self.context["title_placeholders"] = {"name": self._discovery[CONF_INSTANCE_NAME]}
         return await self.async_step_zeroconf_confirm()
 
     async def async_step_zeroconf_confirm(

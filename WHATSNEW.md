@@ -32,6 +32,11 @@ for multiple daemon instances.
 - The integration provides no task execution or daemon-management controls.
 - No telemetry, analytics, or cloud service is used.
 
+### 🐛 Fixed
+
+- Zeroconf confirmation titles no longer generate missing-placeholder errors in
+  the Home Assistant frontend.
+
 ### 📝 Documentation
 
 - Manual setup is documented as the normal path.

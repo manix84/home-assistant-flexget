@@ -14,7 +14,7 @@
         }
       },
       "zeroconf_confirm": {
-        "title": "Set up {name}",
+        "title": "Set up discovered FlexGet instance",
         "description": "FlexGet was discovered at {host}:{port}. Enter its API token to verify and add it.",
         "data": {
           "token": "API token",
