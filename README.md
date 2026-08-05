@@ -75,6 +75,15 @@ supported and provides the same entities and behavior.
 > 🛡️ **Discovery is only a hint:** Setup completes only after the user supplies
 > a token and the authenticated version endpoint succeeds.
 
+## 🌱 Project and community
+
+- 🎉 See [`WHATSNEW.md`](WHATSNEW.md) for upcoming user-visible changes.
+- 🛡️ Read [`PRIVACY.md`](PRIVACY.md) and [`SECURITY.md`](SECURITY.md) for data
+  handling and private vulnerability reporting.
+- 🤝 Contributions are welcome—start with [`CONTRIBUTING.md`](CONTRIBUTING.md)
+  and our [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+- 💬 See [`SUPPORT.md`](SUPPORT.md) for help and issue-reporting guidance.
+
 ## 🛠️ Development
 
 Create a Python virtual environment, install `requirements_test.txt`, then run:
