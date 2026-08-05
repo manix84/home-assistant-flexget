@@ -13,10 +13,10 @@ from custom_components.flexget.api import (
 
 
 def test_endpoint_normalization_and_uniqueness() -> None:
-    endpoint = FlexGetEndpoint("TORBOX.local.", 5053, "api/")
-    assert endpoint.base_url == "http://torbox.local:5053/api"
-    assert endpoint.unique_id == "torbox.local:5053"
-    assert FlexGetEndpoint("torbox.local", 5054).unique_id != endpoint.unique_id
+    endpoint = FlexGetEndpoint("FLEXGET.local.", 5053, "api/")
+    assert endpoint.base_url == "http://flexget.local:5053/api"
+    assert endpoint.unique_id == "flexget.local:5053"
+    assert FlexGetEndpoint("flexget.local", 5054).unique_id != endpoint.unique_id
 
 
 def test_normalize_api_path_rejects_urls() -> None:

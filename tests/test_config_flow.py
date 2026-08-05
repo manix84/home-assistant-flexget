@@ -20,10 +20,10 @@ async def test_zeroconf_discovery_uses_instance_name_for_card_title(
         DOMAIN,
         context={"source": config_entries.SOURCE_ZEROCONF},
         data=ZeroconfServiceInfo(
-            ip_address=ip_address("10.0.0.102"),
-            ip_addresses=[ip_address("10.0.0.102")],
+            ip_address=ip_address("192.0.2.10"),
+            ip_addresses=[ip_address("192.0.2.10")],
             port=5051,
-            hostname="torbox.local.",
+            hostname="flexget.local.",
             type="_flexget._tcp.local.",
             name="FlexGet Sort._flexget._tcp.local.",
             properties={"name": "Sort", "path": "/api"},
@@ -53,7 +53,7 @@ async def test_manual_flow_and_multi_port_uniqueness(hass: HomeAssistant) -> Non
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
-                CONF_HOST: "TORBOX.local.",
+                CONF_HOST: "FLEXGET.local.",
                 CONF_PORT: 5053,
                 CONF_API_PATH: "api/",
                 CONF_TOKEN: "secret",
@@ -62,7 +62,7 @@ async def test_manual_flow_and_multi_port_uniqueness(hass: HomeAssistant) -> Non
         )
         assert result["type"] is FlowResultType.CREATE_ENTRY
         assert result["title"] == "Anime"
-        assert result["data"][CONF_HOST] == "torbox.local"
+        assert result["data"][CONF_HOST] == "flexget.local"
         assert result["data"][CONF_API_PATH] == "/api"
 
         second = await hass.config_entries.flow.async_init(
@@ -71,7 +71,7 @@ async def test_manual_flow_and_multi_port_uniqueness(hass: HomeAssistant) -> Non
         second = await hass.config_entries.flow.async_configure(
             second["flow_id"],
             {
-                CONF_HOST: "torbox.local",
+                CONF_HOST: "flexget.local",
                 CONF_PORT: 5054,
                 CONF_API_PATH: "/api",
                 CONF_TOKEN: "different-secret",
@@ -90,7 +90,7 @@ async def test_duplicate_host_port_is_rejected(hass: HomeAssistant) -> None:
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
         values = {
-            CONF_HOST: "torbox.local",
+            CONF_HOST: "flexget.local",
             CONF_PORT: 5053,
             CONF_API_PATH: "/api",
             CONF_TOKEN: "secret",
@@ -116,7 +116,7 @@ async def test_invalid_token_shows_auth_error(hass: HomeAssistant) -> None:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
-                CONF_HOST: "torbox.local",
+                CONF_HOST: "flexget.local",
                 CONF_PORT: 5053,
                 CONF_API_PATH: "/api",
                 CONF_TOKEN: "bad",

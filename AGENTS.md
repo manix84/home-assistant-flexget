@@ -99,7 +99,8 @@ Every relevant change should consider:
 - stable entity values, attributes, availability, IDs, and device grouping.
 
 Mock external FlexGet APIs. Never use a real token or depend on a live daemon in
-unit tests. Document live torBox verification separately when it is performed.
+unit tests. Document live environment verification separately when it is
+performed, without committing private infrastructure details.
 
 ## ✅ Validation
 
@@ -131,6 +132,9 @@ stiff. Keep them purposeful and accessible:
 
 Manual configuration is the normal setup path. Describe Avahi/zeroconf as an
 optional advanced convenience and always provide explicit manual instructions.
+Keep all public code, documentation, fixtures, and examples generic. Never use
+the maintainer's username, hostnames, addresses, or personal directory layout;
+use neutral placeholders and reserved example addresses instead.
 
 Update `WHATSNEW.md` for user-visible changes. Update `README.md`, `PRIVACY.md`,
 `SECURITY.md`, and translations whenever the change affects their promises.

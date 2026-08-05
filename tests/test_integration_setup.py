@@ -15,9 +15,9 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="Sort",
-        unique_id="10.0.0.102:5051",
+        unique_id="192.0.2.10:5051",
         data={
-            CONF_HOST: "10.0.0.102",
+            CONF_HOST: "192.0.2.10",
             CONF_PORT: 5051,
             CONF_API_PATH: "/api",
             CONF_TOKEN: "secret-token",

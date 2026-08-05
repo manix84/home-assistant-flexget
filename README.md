@@ -30,16 +30,15 @@ hosts FlexGet:
 flexget web showtoken
 ```
 
-If the daemon uses a specific configuration file, pass it with `-c`. For
-example, an installation with several FlexGet configs might use:
+If the daemon uses a specific configuration file, pass its path with `-c`:
 
 ```console
-flexget -c ~/.config/flexget/config-*.yml web showtoken
+flexget -c /path/to/config.yml web showtoken
 ```
 
-Adjust the path or filename pattern to select the configuration used by the
-daemon you are adding. Then configure each instance manually with its host, API
-port, and token. This is the normal and recommended setup:
+Replace `/path/to/config.yml` with the configuration used by the daemon you are
+adding. Then configure each instance manually with its host, API port, and
+token. This is the normal and recommended setup:
 
 1. In Home Assistant, open **Settings > Devices & services**.
 2. Select **Add integration**, search for **FlexGet**, and select it.

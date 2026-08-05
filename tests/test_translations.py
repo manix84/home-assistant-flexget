@@ -31,4 +31,4 @@ def test_api_token_fields_explain_how_to_find_token(path: Path) -> None:
     for step in token_steps:
         description = step["data_description"]["token"]
         assert "flexget web showtoken" in description
-        assert "flexget -c ~/.config/flexget/config-*.yml web showtoken" in description
+        assert "flexget -c /path/to/config.yml web showtoken" in description

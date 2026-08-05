@@ -14,7 +14,7 @@
           "instance_name": "Instance name"
         },
         "data_description": {
-          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. If you use a specific configuration file, run `flexget -c ~/.config/flexget/config-*.yml web showtoken` and adjust the path or pattern as needed."
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. For a specific configuration file, run `flexget -c /path/to/config.yml web showtoken`."
         }
       },
       "zeroconf_confirm": {
@@ -25,7 +25,7 @@
           "instance_name": "Instance name"
         },
         "data_description": {
-          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. If you use a specific configuration file, run `flexget -c ~/.config/flexget/config-*.yml web showtoken` and adjust the path or pattern as needed."
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. For a specific configuration file, run `flexget -c /path/to/config.yml web showtoken`."
         }
       },
       "reauth_confirm": {
@@ -33,7 +33,7 @@
         "description": "Enter a valid API token.",
         "data": {"token": "API token"},
         "data_description": {
-          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. If you use a specific configuration file, run `flexget -c ~/.config/flexget/config-*.yml web showtoken` and adjust the path or pattern as needed."
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. For a specific configuration file, run `flexget -c /path/to/config.yml web showtoken`."
         }
       }
     },
@@ -60,7 +60,7 @@
           "scan_interval": "Polling interval (seconds)"
         },
         "data_description": {
-          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. If you use a specific configuration file, run `flexget -c ~/.config/flexget/config-*.yml web showtoken` and adjust the path or pattern as needed."
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. For a specific configuration file, run `flexget -c /path/to/config.yml web showtoken`."
         }
       }
     }
