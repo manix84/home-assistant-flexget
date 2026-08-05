@@ -1,14 +1,43 @@
 """Tests for FlexGet config flows."""
 
+from ipaddress import ip_address
 from unittest.mock import AsyncMock, patch
 
 from homeassistant import config_entries
+from homeassistant.components.zeroconf import ZeroconfServiceInfo
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.flexget.api import FlexGetAuthenticationError
 from custom_components.flexget.const import CONF_API_PATH, CONF_INSTANCE_NAME, CONF_TOKEN, DOMAIN
+
+
+async def test_zeroconf_discovery_uses_instance_name_for_card_title(
+    hass: HomeAssistant,
+) -> None:
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_ZEROCONF},
+        data=ZeroconfServiceInfo(
+            ip_address=ip_address("10.0.0.102"),
+            ip_addresses=[ip_address("10.0.0.102")],
+            port=5051,
+            hostname="torbox.local.",
+            type="_flexget._tcp.local.",
+            name="FlexGet Sort._flexget._tcp.local.",
+            properties={"name": "Sort", "path": "/api"},
+        ),
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "zeroconf_confirm"
+    progress = next(
+        flow
+        for flow in hass.config_entries.flow.async_progress()
+        if flow["flow_id"] == result["flow_id"]
+    )
+    assert progress["context"]["title_placeholders"] == {"name": "Sort"}
 
 
 async def test_manual_flow_and_multi_port_uniqueness(hass: HomeAssistant) -> None:

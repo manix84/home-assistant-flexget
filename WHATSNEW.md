@@ -38,6 +38,8 @@ for multiple daemon instances.
 
 ### 🐛 Fixed
 
+- Discovered FlexGet cards now show the advertised instance purpose, such as
+  **Sort**, **TV Shows**, or **Anime**, instead of the generic integration name.
 - Zeroconf confirmation titles no longer generate missing-placeholder errors in
   the Home Assistant frontend.
 

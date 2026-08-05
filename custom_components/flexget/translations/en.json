@@ -1,6 +1,7 @@
 {
   "title": "FlexGet",
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
         "title": "Connect to FlexGet",
