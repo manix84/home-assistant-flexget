@@ -12,6 +12,7 @@ from custom_components.flexget.models import (
     parse_queue,
     parse_queued_task_names,
     parse_schedules,
+    parse_task_controls,
     parse_task_names,
     parse_task_status,
     parse_version,
@@ -34,6 +35,19 @@ def test_count_tasks_handles_supported_shapes() -> None:
 def test_parse_task_names_handles_live_list_shape() -> None:
     """Parse the string-list response returned by the Sort daemon."""
     assert parse_task_names(["sort_tv", "extract_all"]) == ("extract_all", "sort_tv")
+
+
+def test_parse_task_controls_uses_manual_setting() -> None:
+    controls = parse_task_controls(
+        [
+            {"name": "automatic", "config": {"rss": "https://example.test/feed"}},
+            {"name": "manual", "config": {"manual": True}},
+        ]
+    )
+    assert [(control.name, control.automatic_execution) for control in controls] == [
+        ("automatic", True),
+        ("manual", False),
+    ]
 
 
 def test_parse_queue_with_active_task() -> None:

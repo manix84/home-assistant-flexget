@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.flexget.const import CONF_API_PATH, CONF_TOKEN, DOMAIN
+from custom_components.flexget.const import CONF_API_PATH, CONF_ENABLE_CONTROLS, CONF_TOKEN, DOMAIN
 
 
 async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -> None:
@@ -22,6 +22,7 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
             CONF_API_PATH: "/api",
             CONF_TOKEN: "secret-token",
         },
+        options={CONF_ENABLE_CONTROLS: True},
     )
     entry.add_to_hass(hass)
 
@@ -38,7 +39,12 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
         ),
         patch(
             "custom_components.flexget.api.FlexGetClient.async_get_tasks",
-            AsyncMock(return_value=["extract_all", "sort_anime"]),
+            AsyncMock(
+                return_value=[
+                    {"name": "extract_all", "config": {"manual": True}},
+                    {"name": "sort_anime", "config": {"rss": "https://example.test/feed"}},
+                ]
+            ),
         ),
         patch(
             "custom_components.flexget.api.FlexGetClient.async_get_queue",
@@ -120,8 +126,17 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
     assert hass.states.get("binary_sensor.sort_approval_required").state == "off"
     assert hass.states.get("sensor.sort_successful_executions_24_h").state == "1"
     assert hass.states.get("sensor.sort_execution_success_rate_24_h").state == "100.0"
+    assert hass.states.get("switch.sort_extract_all_automatic_execution").state == "off"
+    assert hass.states.get("switch.sort_sort_anime_automatic_execution").state == "on"
+    assert hass.states.get("button.sort_run_extract_all") is not None
+    assert hass.states.get("button.sort_run_sort_anime") is not None
 
     registry = er.async_get(hass)
+    assert (
+        registry.async_get("switch.sort_sort_anime_automatic_execution").entity_category
+        is EntityCategory.CONFIG
+    )
+    assert registry.async_get("button.sort_run_sort_anime").entity_category is EntityCategory.CONFIG
     for entity_id in (
         "sensor.sort_configured_tasks",
         "sensor.sort_queued_tasks",

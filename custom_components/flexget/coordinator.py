@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from copy import deepcopy
 from dataclasses import replace
 from datetime import datetime, timedelta
 from time import monotonic
@@ -14,8 +15,15 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from .api import FlexGetAuthenticationError, FlexGetClient, FlexGetError
-from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN, EXTENDED_UPDATE_INTERVAL
+from .api import FlexGetAuthenticationError, FlexGetClient, FlexGetError, FlexGetResponseError
+from .const import (
+    CONF_ENABLE_CONTROLS,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_ENABLE_CONTROLS,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    EXTENDED_UPDATE_INTERVAL,
+)
 from .models import (
     ActiveTask,
     FlexGetData,
@@ -28,6 +36,7 @@ from .models import (
     parse_queue,
     parse_queued_task_names,
     parse_schedules,
+    parse_task_controls,
     parse_task_names,
     parse_task_status,
     parse_version,
@@ -68,6 +77,10 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
         self._recent_executions: Any = None
         self.consecutive_failures = 0
         self.last_failure: datetime | None = None
+        self.controls_enabled = bool(
+            entry.options.get(CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS)
+        )
+        self._control_lock = asyncio.Lock()
 
     async def _async_update_data(self) -> FlexGetData:
         now = dt_util.utcnow()
@@ -75,7 +88,7 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
         try:
             version_data, tasks_data, queue_data = await asyncio.gather(
                 self.client.async_get_version(),
-                self.client.async_get_tasks(),
+                self.client.async_get_tasks(include_config=self.controls_enabled),
                 self.client.async_get_queue(),
             )
             await self._async_refresh_extended_data(now)
@@ -122,6 +135,7 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             operational_stats=parse_operational_stats(
                 self._task_status_data, self._recent_executions
             ),
+            task_controls=parse_task_controls(tasks_data),
             response_time_ms=round((monotonic() - started) * 1000),
             last_success=now,
         )
@@ -188,6 +202,41 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
     def _record_failure(self, now: datetime) -> None:
         self.consecutive_failures += 1
         self.last_failure = now
+
+    async def async_set_task_automatic_execution(self, task_name: str, enabled: bool) -> None:
+        """Safely change only the task's manual execution setting."""
+        self._ensure_controls_enabled()
+        if self.data and self.data.active_task and self.data.active_task.name == task_name:
+            raise FlexGetError("Cannot change a task while it is running")
+        try:
+            async with self._control_lock:
+                task = await self.client.async_get_task(task_name)
+                config = deepcopy(task["config"])
+                config["manual"] = not enabled
+                await self.client.async_update_task(task_name, config)
+                confirmed = await self.client.async_get_task(task_name)
+                confirmed_manual = confirmed["config"].get("manual") is True
+                if confirmed_manual == enabled:
+                    raise FlexGetResponseError("FlexGet did not apply the task control change")
+        except FlexGetAuthenticationError:
+            self.config_entry.async_start_reauth(self.hass)
+            raise
+        await self.async_request_refresh()
+
+    async def async_execute_task(self, task_name: str) -> None:
+        """Queue one explicit task execution."""
+        self._ensure_controls_enabled()
+        try:
+            async with self._control_lock:
+                await self.client.async_execute_task(task_name)
+        except FlexGetAuthenticationError:
+            self.config_entry.async_start_reauth(self.hass)
+            raise
+        await self.async_request_refresh()
+
+    def _ensure_controls_enabled(self) -> None:
+        if not self.controls_enabled:
+            raise FlexGetError("FlexGet controls are disabled")
 
     def _with_state_since(self, active: ActiveTask | None, now: datetime) -> ActiveTask | None:
         signature = active.signature if active else None

@@ -1,5 +1,6 @@
 """Tests for coordinator updates and failure isolation."""
 
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -7,8 +8,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import UpdateFailed
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.flexget.api import FlexGetConnectionError
-from custom_components.flexget.const import DOMAIN
+from custom_components.flexget.api import FlexGetConnectionError, FlexGetError
+from custom_components.flexget.const import CONF_ENABLE_CONTROLS, DOMAIN
 from custom_components.flexget.coordinator import FlexGetCoordinator
 
 
@@ -139,3 +140,48 @@ async def test_extended_endpoint_failure_does_not_hide_core_status(hass: HomeAss
     assert data.accepted_count == 0
     assert data.failed_entries.count is None
     assert data.pending_approvals.count is None
+
+
+async def test_opt_in_task_controls_preserve_config_and_confirm_changes(
+    hass: HomeAssistant,
+) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Controls",
+        data={},
+        options={CONF_ENABLE_CONTROLS: True},
+    )
+    entry.add_to_hass(hass)
+    client = AsyncMock()
+    client.async_get_task.side_effect = [
+        {"name": "sort", "config": {"rss": "https://example.test/feed"}},
+        {"name": "sort", "config": {"rss": "https://example.test/feed", "manual": True}},
+        {"name": "sort", "config": {"rss": "https://example.test/feed", "manual": True}},
+        {"name": "sort", "config": {"rss": "https://example.test/feed", "manual": False}},
+    ]
+    coordinator = FlexGetCoordinator(hass, entry, client)
+    coordinator.async_request_refresh = AsyncMock()
+
+    await coordinator.async_set_task_automatic_execution("sort", False)
+
+    client.async_update_task.assert_awaited_once_with(
+        "sort", {"rss": "https://example.test/feed", "manual": True}
+    )
+    coordinator.async_request_refresh.assert_awaited_once()
+
+    client.async_update_task.reset_mock()
+    coordinator.async_request_refresh.reset_mock()
+    await coordinator.async_set_task_automatic_execution("sort", True)
+    client.async_update_task.assert_awaited_once_with(
+        "sort", {"rss": "https://example.test/feed", "manual": False}
+    )
+    coordinator.async_request_refresh.assert_awaited_once()
+
+    coordinator.async_request_refresh.reset_mock()
+    await coordinator.async_execute_task("sort")
+    client.async_execute_task.assert_awaited_once_with("sort")
+    coordinator.async_request_refresh.assert_awaited_once()
+
+    coordinator.data = SimpleNamespace(active_task=SimpleNamespace(name="sort"))
+    with pytest.raises(FlexGetError, match="while it is running"):
+        await coordinator.async_set_task_automatic_execution("sort", False)

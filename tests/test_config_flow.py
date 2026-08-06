@@ -8,9 +8,17 @@ from homeassistant.components.zeroconf import ZeroconfServiceInfo
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.flexget.api import FlexGetAuthenticationError
-from custom_components.flexget.const import CONF_API_PATH, CONF_INSTANCE_NAME, CONF_TOKEN, DOMAIN
+from custom_components.flexget.const import (
+    CONF_API_PATH,
+    CONF_ENABLE_CONTROLS,
+    CONF_INSTANCE_NAME,
+    CONF_SCAN_INTERVAL,
+    CONF_TOKEN,
+    DOMAIN,
+)
 
 
 async def test_zeroconf_discovery_uses_instance_name_for_card_title(
@@ -125,3 +133,28 @@ async def test_invalid_token_shows_auth_error(hass: HomeAssistant) -> None:
         )
         assert result["type"] is FlowResultType.FORM
         assert result["errors"] == {"base": "invalid_auth"}
+
+
+async def test_options_require_explicit_control_opt_in(hass: HomeAssistant) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Sort",
+        data={CONF_TOKEN: "secret-token"},
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] is FlowResultType.FORM
+    assert result["data_schema"]({})[CONF_ENABLE_CONTROLS] is False
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_INSTANCE_NAME: "Sort",
+            CONF_TOKEN: "secret-token",
+            CONF_SCAN_INTERVAL: 60,
+            CONF_ENABLE_CONTROLS: True,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_ENABLE_CONTROLS] is True

@@ -96,9 +96,39 @@ class FlexGetClient:
             raise FlexGetUnsupportedApiError("Version response has no FlexGet version")
         return data
 
-    async def async_get_tasks(self) -> Any:
+    async def async_get_tasks(self, *, include_config: bool = False) -> Any:
         """Fetch configured tasks without their full configuration."""
-        return await self._get("tasks/", params={"include_config": "false"})
+        return await self._get(
+            "tasks/", params={"include_config": "true" if include_config else "false"}
+        )
+
+    async def async_get_task(self, task_name: str) -> dict[str, Any]:
+        """Fetch one task's latest user configuration."""
+        data, _headers = await self._request_with_headers("GET", f"tasks/{task_name}/")
+        if not isinstance(data, dict) or not isinstance(data.get("config"), dict):
+            raise FlexGetResponseError("Task response must contain a configuration object")
+        if data.get("name") != task_name:
+            raise FlexGetResponseError("Task response name does not match the request")
+        return data
+
+    async def async_update_task(self, task_name: str, config: dict[str, Any]) -> None:
+        """Replace one task configuration using the FlexGet API."""
+        await self._request_with_headers(
+            "PUT",
+            f"tasks/{task_name}/",
+            json={"name": task_name, "config": config},
+        )
+
+    async def async_execute_task(self, task_name: str) -> None:
+        """Queue one explicit task execution without streaming logs."""
+        data, _headers = await self._request_with_headers(
+            "POST", "tasks/execute/", json={"tasks": [task_name]}
+        )
+        tasks = data.get("tasks") if isinstance(data, dict) else None
+        if not isinstance(tasks, list) or not any(
+            isinstance(task, dict) and task.get("name") == task_name for task in tasks
+        ):
+            raise FlexGetResponseError("FlexGet did not confirm the queued task")
 
     async def async_get_queue(self) -> Any:
         """Fetch queued and active task state."""
@@ -232,10 +262,16 @@ class FlexGetClient:
         return data
 
     async def _get_with_headers(self, endpoint: str, **kwargs: Any) -> tuple[Any, dict[str, str]]:
+        return await self._request_with_headers("GET", endpoint, **kwargs)
+
+    async def _request_with_headers(
+        self, method: str, endpoint: str, **kwargs: Any
+    ) -> tuple[Any, dict[str, str]]:
         url = f"{self.endpoint.base_url}/{quote(endpoint, safe='/')}"
         try:
             async with async_timeout.timeout(self._timeout):
-                response = await self._session.get(
+                response = await self._session.request(
+                    method,
                     url,
                     headers={"Authorization": f"Token {self._token}"},
                     **kwargs,

@@ -84,12 +84,25 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
         assert request.query["produced"] == "false"
         return web.json_response([{"succeeded": True, "accepted": 1}])
 
+    async def task(request: web.Request) -> web.Response:
+        if request.method == "PUT":
+            payload = await request.json()
+            assert payload == {"name": "sort", "config": {"manual": True}}
+        return web.json_response({"name": "sort", "config": {"manual": True}})
+
+    async def execute(request: web.Request) -> web.Response:
+        assert await request.json() == {"tasks": ["sort"]}
+        return web.json_response({"tasks": [{"id": "one", "name": "sort"}]})
+
     app = web.Application()
     app.router.add_get("/api/tasks/status/", status)
     app.router.add_get("/api/failed/", failed)
     app.router.add_get("/api/pending/", pending)
     app.router.add_get("/api/schedules/17/", schedule)
     app.router.add_get("/api/tasks/status/4/executions/", executions)
+    app.router.add_get("/api/tasks/sort/", task)
+    app.router.add_put("/api/tasks/sort/", task)
+    app.router.add_post("/api/tasks/execute/", execute)
     server = await aiohttp_server(app)
     async with ClientSession() as session:
         client = FlexGetClient(session, FlexGetEndpoint("127.0.0.1", server.port), "token")
@@ -101,6 +114,9 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
             [{"id": 4}], datetime.fromisoformat("2026-08-05T00:00:00+00:00")
         )
         assert recent[0][0]["accepted"] == 1
+        assert (await client.async_get_task("sort"))["config"]["manual"] is True
+        await client.async_update_task("sort", {"manual": True})
+        await client.async_execute_task("sort")
 
 
 @pytest.mark.parametrize(

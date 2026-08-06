@@ -23,10 +23,12 @@ from .api import (
 )
 from .const import (
     CONF_API_PATH,
+    CONF_ENABLE_CONTROLS,
     CONF_INSTANCE_NAME,
     CONF_SCAN_INTERVAL,
     CONF_TOKEN,
     DEFAULT_API_PATH,
+    DEFAULT_ENABLE_CONTROLS,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -214,6 +216,12 @@ class FlexGetOptionsFlow(OptionsFlow):
                         CONF_SCAN_INTERVAL,
                         default=self._entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     ): vol.All(vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL, max=3600)),
+                    vol.Required(
+                        CONF_ENABLE_CONTROLS,
+                        default=self._entry.options.get(
+                            CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS
+                        ),
+                    ): bool,
                 }
             ),
         )

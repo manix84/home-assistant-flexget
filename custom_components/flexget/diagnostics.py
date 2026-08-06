@@ -67,6 +67,13 @@ async def async_get_config_entry_diagnostics(
                     "failed_entries_24h": data.operational_stats.failed_entries,
                     "never_run_tasks": data.operational_stats.never_run_tasks,
                 },
+                "task_controls": [
+                    {
+                        "task": control.name,
+                        "automatic_execution": control.automatic_execution,
+                    }
+                    for control in data.task_controls
+                ],
                 "response_time_ms": data.response_time_ms,
                 "consecutive_failures": coordinator.consecutive_failures,
                 "last_success": data.last_success.isoformat(),

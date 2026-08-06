@@ -78,6 +78,14 @@ class OperationalStats:
 
 
 @dataclass(frozen=True, slots=True)
+class TaskControl:
+    """Read-only state used by opt-in task control entities."""
+
+    name: str
+    automatic_execution: bool
+
+
+@dataclass(frozen=True, slots=True)
 class FlexGetData:
     """One normalized coordinator snapshot."""
 
@@ -101,6 +109,7 @@ class FlexGetData:
     scheduler_enabled: bool | None
     pending_approvals: PendingApprovalSummary
     operational_stats: OperationalStats
+    task_controls: tuple[TaskControl, ...]
     response_time_ms: int
     last_success: datetime
 
@@ -144,6 +153,26 @@ def parse_task_names(data: Any) -> tuple[str, ...]:
     else:
         names = []
     return tuple(sorted(str(name) for name in names if name))
+
+
+def parse_task_controls(data: Any) -> tuple[TaskControl, ...]:
+    """Return automatic-execution state from full task configuration records."""
+    if not isinstance(data, list):
+        return ()
+    controls = []
+    for task in data:
+        if not isinstance(task, dict) or not task.get("name"):
+            continue
+        config = task.get("config")
+        if not isinstance(config, dict):
+            continue
+        controls.append(
+            TaskControl(
+                name=str(task["name"]),
+                automatic_execution=config.get("manual") is not True,
+            )
+        )
+    return tuple(sorted(controls, key=lambda control: control.name))
 
 
 def parse_queue(data: Any) -> tuple[int, ActiveTask | None]:

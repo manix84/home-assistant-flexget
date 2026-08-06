@@ -28,6 +28,8 @@ The integration is designed to:
 - send tokens only to the configured local FlexGet endpoint;
 - redact tokens from diagnostics;
 - verify zeroconf hints through authenticated API access;
-- provide read-only monitoring without task or daemon controls.
+- keep task controls disabled by default;
+- serialize, reread, and verify opt-in task configuration changes;
+- avoid daemon-management controls.
 
 See `PRIVACY.md` for the data-handling policy.

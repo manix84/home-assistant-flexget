@@ -57,15 +57,20 @@
         "data": {
           "instance_name": "Instance name",
           "token": "API token",
-          "scan_interval": "Polling interval (seconds)"
+          "scan_interval": "Polling interval (seconds)",
+          "enable_controls": "Enable task controls"
         },
         "data_description": {
-          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. For a specific configuration file, run `flexget -c /path/to/config.yml web showtoken`."
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. For a specific configuration file, run `flexget -c /path/to/config.yml web showtoken`.",
+          "enable_controls": "Allows Home Assistant to run tasks and change their `manual` setting. FlexGet may reformat its YAML configuration and remove comments when a task is changed."
         }
       }
     }
   },
   "entity": {
+    "button": {
+      "run_task": {"name": "Run {task}"}
+    },
     "binary_sensor": {
       "connectivity": {"name": "Connectivity"},
       "task_running": {"name": "Task running"},
@@ -114,6 +119,9 @@
       "overdue_retry_count": {"name": "Overdue retries"},
       "highest_retry_count": {"name": "Highest retry count"},
       "oldest_pending_approval_age": {"name": "Oldest pending approval age"}
+    },
+    "switch": {
+      "task_automatic_execution": {"name": "{task} automatic execution"}
     }
   }
 }

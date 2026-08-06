@@ -1,5 +1,8 @@
 {
   "entity": {
+    "button": {
+      "run_task": {"default": "mdi:play"}
+    },
     "binary_sensor": {
       "connectivity": {"default": "mdi:lan-connect"},
       "task_running": {"default": "mdi:progress-clock"},
@@ -15,6 +18,9 @@
       "accepted_count": {"default": "mdi:history"},
       "last_accepted_task": {"default": "mdi:check-circle-outline"},
       "last_successful_update": {"default": "mdi:update"}
+    },
+    "switch": {
+      "task_automatic_execution": {"default": "mdi:calendar-play"}
     }
   }
 }

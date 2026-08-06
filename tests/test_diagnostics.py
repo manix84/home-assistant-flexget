@@ -45,6 +45,7 @@ async def test_diagnostics_redact_token(hass: HomeAssistant) -> None:
             scheduler_enabled=True,
             pending_approvals=PendingApprovalSummary(None, None),
             operational_stats=OperationalStats(None, None, None, None, None, None),
+            task_controls=(),
             response_time_ms=25,
             last_success=datetime.now(UTC),
         ),
