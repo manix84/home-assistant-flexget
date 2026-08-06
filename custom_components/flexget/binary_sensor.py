@@ -19,6 +19,10 @@ async def async_setup_entry(
             FlexGetConnectivityBinarySensor(entry),
             FlexGetTaskRunningBinarySensor(entry),
             FlexGetUpdateAvailableBinarySensor(entry),
+            FlexGetLastExecutionSucceededBinarySensor(entry),
+            FlexGetFailedEntriesBinarySensor(entry),
+            FlexGetSchedulerEnabledBinarySensor(entry),
+            FlexGetApprovalRequiredBinarySensor(entry),
         ]
     )
 
@@ -80,3 +84,82 @@ class FlexGetUpdateAvailableBinarySensor(FlexGetEntity, BinarySensorEntity):
         if data is None or data.latest_version is None:
             return None
         return data.version != data.latest_version
+
+
+class FlexGetLastExecutionSucceededBinarySensor(FlexGetEntity, BinarySensorEntity):
+    """Report the outcome of the most recent task execution."""
+
+    entity_description = BinarySensorEntityDescription(
+        key="last_execution_succeeded",
+        translation_key="last_execution_succeeded",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+    def __init__(self, entry: FlexGetConfigEntry) -> None:
+        super().__init__(entry, self.entity_description.key)
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        return data.last_execution.succeeded if data and data.last_execution else None
+
+
+class FlexGetFailedEntriesBinarySensor(FlexGetEntity, BinarySensorEntity):
+    """Report whether FlexGet has entries awaiting retry."""
+
+    entity_description = BinarySensorEntityDescription(
+        key="failed_entries",
+        translation_key="failed_entries",
+        device_class="problem",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+    def __init__(self, entry: FlexGetConfigEntry) -> None:
+        super().__init__(entry, self.entity_description.key)
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        return (
+            bool(data.failed_entries.count)
+            if data and data.failed_entries.count is not None
+            else None
+        )
+
+
+class FlexGetSchedulerEnabledBinarySensor(FlexGetEntity, BinarySensorEntity):
+    """Report whether the daemon has active schedules."""
+
+    entity_description = BinarySensorEntityDescription(
+        key="scheduler_enabled",
+        translation_key="scheduler_enabled",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+    def __init__(self, entry: FlexGetConfigEntry) -> None:
+        super().__init__(entry, self.entity_description.key)
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        return data.scheduler_enabled if data else None
+
+
+class FlexGetApprovalRequiredBinarySensor(FlexGetEntity, BinarySensorEntity):
+    """Report whether entries are waiting for manual approval."""
+
+    entity_description = BinarySensorEntityDescription(
+        key="approval_required",
+        translation_key="approval_required",
+        device_class="problem",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+    def __init__(self, entry: FlexGetConfigEntry) -> None:
+        super().__init__(entry, self.entity_description.key)
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        count = data.pending_approvals.count if data else None
+        return bool(count) if count is not None else None

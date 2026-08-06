@@ -69,7 +69,11 @@
     "binary_sensor": {
       "connectivity": {"name": "Connectivity"},
       "task_running": {"name": "Task running"},
-      "update_available": {"name": "Update available"}
+      "update_available": {"name": "Update available"},
+      "last_execution_succeeded": {"name": "Last execution succeeded"},
+      "failed_entries": {"name": "Failed entries present"},
+      "scheduler_enabled": {"name": "Scheduler enabled"},
+      "approval_required": {"name": "Approval required"}
     },
     "sensor": {
       "version": {"name": "Version"},
@@ -80,7 +84,24 @@
       "schedule_count": {"name": "Schedules"},
       "accepted_count": {"name": "Accepted entries"},
       "last_accepted_task": {"name": "Last accepted task"},
-      "last_successful_update": {"name": "Last successful update"}
+      "last_successful_update": {"name": "Last successful update"},
+      "response_time": {"name": "API response time"},
+      "consecutive_failed_polls": {"name": "Consecutive failed polls"},
+      "active_task_duration": {"name": "Active task duration"},
+      "last_executed_task": {"name": "Last executed task"},
+      "last_execution_finished": {"name": "Last execution finished"},
+      "last_execution_duration": {"name": "Last execution duration"},
+      "last_execution_accepted": {"name": "Last execution accepted"},
+      "last_execution_rejected": {"name": "Last execution rejected"},
+      "last_execution_failed": {"name": "Last execution failed"},
+      "latest_failed_task": {"name": "Latest failed task"},
+      "latest_failed_execution": {"name": "Latest failed execution"},
+      "last_accepted_time": {"name": "Last accepted time"},
+      "failed_entry_count": {"name": "Failed entries"},
+      "next_retry_time": {"name": "Next retry time"},
+      "next_scheduled_run": {"name": "Next scheduled run"},
+      "time_until_next_run": {"name": "Time until next run"},
+      "pending_approval_count": {"name": "Pending approvals"}
     }
   }
 }

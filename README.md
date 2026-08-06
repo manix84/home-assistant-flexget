@@ -13,7 +13,8 @@ host are supported when they use different ports.
 - 📡 Optional advanced zeroconf discovery through `_flexget._tcp.local.`
 - 🧩 Duplicate suppression by normalized `host:port`
 - 🔄 One shared coordinator request cycle per instance
-- 📊 Connectivity, version, task count, queue, active task, and update sensors
+- 📊 Connectivity, version, task, queue, execution-result, retry-failure,
+  scheduling, pending-approval, and API-health sensors
 - 🔐 Token reauthentication, display-name/token/polling options, and redacted diagnostics
 - 👀 Read-only API access; the integration cannot execute tasks or manage daemons
 

@@ -21,6 +21,8 @@ for multiple daemon instances.
   names available as attributes instead of measurement-style graph entities.
 - Schedule count, accepted-history count, latest version, last accepted task,
   task-running, and update-available entities.
+- Read-only task outcome, failed-entry, scheduling, pending-approval, response-time,
+  and polling-health monitoring, with optional endpoint failures kept isolated.
 - Reauthentication and options for token, display name, and polling interval.
 - Credential-redacted diagnostics.
 - HACS metadata, automated tests, linting, and repository validation.

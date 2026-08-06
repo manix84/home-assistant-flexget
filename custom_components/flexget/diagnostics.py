@@ -39,6 +39,28 @@ async def async_get_config_entry_diagnostics(
                 "accepted_count": data.accepted_count,
                 "last_accepted_task": data.last_accepted_task,
                 "last_accepted_at": data.last_accepted_at,
+                "last_execution": (
+                    {
+                        "task": data.last_execution.task,
+                        "started_at": data.last_execution.started_at,
+                        "finished_at": data.last_execution.finished_at,
+                        "succeeded": data.last_execution.succeeded,
+                        "produced": data.last_execution.produced,
+                        "accepted": data.last_execution.accepted,
+                        "rejected": data.last_execution.rejected,
+                        "failed": data.last_execution.failed,
+                        "abort_reason": data.last_execution.abort_reason,
+                    }
+                    if data.last_execution
+                    else None
+                ),
+                "failed_entry_count": data.failed_entries.count,
+                "next_retry_at": data.failed_entries.next_retry_at,
+                "next_scheduled_run": data.next_scheduled_run,
+                "scheduler_enabled": data.scheduler_enabled,
+                "pending_approval_count": data.pending_approvals.count,
+                "response_time_ms": data.response_time_ms,
+                "consecutive_failures": coordinator.consecutive_failures,
                 "last_success": data.last_success.isoformat(),
             }
             if data

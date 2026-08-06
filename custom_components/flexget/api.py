@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from dataclasses import dataclass
 from typing import Any
@@ -110,6 +111,49 @@ class FlexGetClient:
         data, headers = await self._get_with_headers(
             "history/", params={"per_page": "1", "page": "1", "order": "desc"}
         )
+        total = headers.get("Total-Count")
+        try:
+            return data, int(total) if total is not None else None
+        except ValueError:
+            return data, None
+
+    async def async_get_task_status(self) -> Any:
+        """Fetch the latest execution for each task."""
+        return await self._get(
+            "tasks/status/",
+            params={
+                "per_page": "100",
+                "page": "1",
+                "sort_by": "last_execution_time",
+                "order": "desc",
+                "include_execution": "true",
+            },
+        )
+
+    async def async_get_failed_summary(self) -> tuple[Any, int | None]:
+        """Fetch the newest retry failure and total count."""
+        return await self._get_paginated_summary("failed/", sort_by="failure_time", order="desc")
+
+    async def async_get_pending_approval_summary(self) -> tuple[Any, int | None]:
+        """Fetch the oldest unapproved entry and total count."""
+        return await self._get_paginated_summary(
+            "pending/", sort_by="added", order="asc", approved="false"
+        )
+
+    async def async_get_schedule_details(self, schedules: Any) -> list[Any]:
+        """Fetch runtime details for configured schedules."""
+        if not isinstance(schedules, list):
+            return []
+        requests = [
+            self._get(f"schedules/{schedule['id']}/")
+            for schedule in schedules
+            if isinstance(schedule, dict) and isinstance(schedule.get("id"), int)
+        ]
+        return list(await asyncio.gather(*requests))
+
+    async def _get_paginated_summary(self, endpoint: str, **params: str) -> tuple[Any, int | None]:
+        params.update({"per_page": "1", "page": "1"})
+        data, headers = await self._get_with_headers(endpoint, params=params)
         total = headers.get("Total-Count")
         try:
             return data, int(total) if total is not None else None

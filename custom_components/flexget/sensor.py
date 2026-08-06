@@ -7,10 +7,16 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription
-from homeassistant.const import EntityCategory
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
+)
+from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import FlexGetConfigEntry
 from .const import (
@@ -101,6 +107,144 @@ DESCRIPTIONS = (
         attributes_fn=lambda data: {ATTR_ACCEPTED_AT: data.last_accepted_at},
     ),
     FlexGetSensorDescription(
+        key="response_time",
+        translation_key="response_time",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.MILLISECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.response_time_ms,
+    ),
+    FlexGetSensorDescription(
+        key="active_task_duration",
+        translation_key="active_task_duration",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: (
+            max(0, int((dt_util.utcnow() - data.active_task.state_since).total_seconds()))
+            if data.active_task and data.active_task.state_since
+            else None
+        ),
+    ),
+    FlexGetSensorDescription(
+        key="last_executed_task",
+        translation_key="last_executed_task",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data.last_execution.task if data.last_execution else None,
+    ),
+    FlexGetSensorDescription(
+        key="last_execution_finished",
+        translation_key="last_execution_finished",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: _timestamp(
+            data.last_execution.finished_at if data.last_execution else None
+        ),
+    ),
+    FlexGetSensorDescription(
+        key="last_execution_duration",
+        translation_key="last_execution_duration",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=1,
+        value_fn=lambda data: _execution_duration(data),
+    ),
+    *(
+        FlexGetSensorDescription(
+            key=f"last_execution_{field}",
+            translation_key=f"last_execution_{field}",
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            suggested_display_precision=0,
+            value_fn=lambda data, field=field: (
+                getattr(data.last_execution, field) if data.last_execution else None
+            ),
+        )
+        for field in ("accepted", "rejected", "failed")
+    ),
+    FlexGetSensorDescription(
+        key="latest_failed_task",
+        translation_key="latest_failed_task",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: (
+            data.latest_failed_execution.task if data.latest_failed_execution else None
+        ),
+        attributes_fn=lambda data: (
+            {"reason": data.latest_failed_execution.abort_reason}
+            if data.latest_failed_execution
+            else {}
+        ),
+    ),
+    FlexGetSensorDescription(
+        key="latest_failed_execution",
+        translation_key="latest_failed_execution",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: _timestamp(
+            data.latest_failed_execution.finished_at if data.latest_failed_execution else None
+        ),
+    ),
+    FlexGetSensorDescription(
+        key="last_accepted_time",
+        translation_key="last_accepted_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: _timestamp(data.last_accepted_at),
+    ),
+    FlexGetSensorDescription(
+        key="failed_entry_count",
+        translation_key="failed_entry_count",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.failed_entries.count,
+        attributes_fn=lambda data: {
+            "latest_failure_at": data.failed_entries.latest_at,
+            "latest_title": data.failed_entries.latest_title,
+            "latest_reason": data.failed_entries.latest_reason,
+            "latest_attempt_count": data.failed_entries.latest_attempt_count,
+        },
+    ),
+    FlexGetSensorDescription(
+        key="next_retry_time",
+        translation_key="next_retry_time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: _timestamp(data.failed_entries.next_retry_at),
+    ),
+    FlexGetSensorDescription(
+        key="next_scheduled_run",
+        translation_key="next_scheduled_run",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: _timestamp(data.next_scheduled_run),
+    ),
+    FlexGetSensorDescription(
+        key="time_until_next_run",
+        translation_key="time_until_next_run",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: _seconds_until(data.next_scheduled_run),
+    ),
+    FlexGetSensorDescription(
+        key="pending_approval_count",
+        translation_key="pending_approval_count",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.pending_approvals.count,
+        attributes_fn=lambda data: {"oldest_pending_at": data.pending_approvals.oldest_at},
+    ),
+    FlexGetSensorDescription(
         key="last_successful_update",
         translation_key="last_successful_update",
         device_class=SensorDeviceClass.TIMESTAMP,
@@ -110,12 +254,38 @@ DESCRIPTIONS = (
 )
 
 
+def _timestamp(value: str | None) -> datetime | None:
+    """Parse a FlexGet timestamp using Home Assistant's configured timezone when absent."""
+    parsed = dt_util.parse_datetime(value) if value else None
+    return dt_util.as_utc(parsed) if parsed else None
+
+
+def _execution_duration(data: FlexGetData) -> float | None:
+    if not data.last_execution:
+        return None
+    started = _timestamp(data.last_execution.started_at)
+    finished = _timestamp(data.last_execution.finished_at)
+    if not started or not finished:
+        return None
+    return max(0, (finished - started).total_seconds())
+
+
+def _seconds_until(value: str | None) -> int | None:
+    timestamp = _timestamp(value)
+    return max(0, int((timestamp - dt_util.utcnow()).total_seconds())) if timestamp else None
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: FlexGetConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    async_add_entities(FlexGetSensor(entry, description) for description in DESCRIPTIONS)
+    async_add_entities(
+        [
+            *(FlexGetSensor(entry, description) for description in DESCRIPTIONS),
+            FlexGetConsecutiveFailedPollsSensor(entry),
+        ]
+    )
 
 
 class FlexGetSensor(FlexGetEntity, SensorEntity):
@@ -142,3 +312,26 @@ class FlexGetSensor(FlexGetEntity, SensorEntity):
             for key, value in self.entity_description.attributes_fn(data).items()
             if value is not None
         }
+
+
+class FlexGetConsecutiveFailedPollsSensor(FlexGetEntity, SensorEntity):
+    """Report failures even while normal coordinator entities are unavailable."""
+
+    entity_description = SensorEntityDescription(
+        key="consecutive_failed_polls",
+        translation_key="consecutive_failed_polls",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+    )
+
+    def __init__(self, entry: FlexGetConfigEntry) -> None:
+        super().__init__(entry, self.entity_description.key)
+
+    @property
+    def native_value(self) -> int:
+        return self.coordinator.consecutive_failures
+
+    @property
+    def available(self) -> bool:
+        return True

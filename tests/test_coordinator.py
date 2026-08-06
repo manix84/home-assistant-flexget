@@ -31,6 +31,40 @@ async def test_coordinator_builds_shared_snapshot(hass: HomeAssistant) -> None:
         [{"task": "a", "time": "2026-08-05T13:05:49.010966"}],
         42,
     )
+    client.async_get_task_status.return_value = [
+        {
+            "name": "a",
+            "last_execution": {
+                "start": "2026-08-05T13:00:00+00:00",
+                "end": "2026-08-05T13:00:05+00:00",
+                "succeeded": False,
+                "produced": 4,
+                "accepted": 2,
+                "rejected": 1,
+                "failed": 1,
+                "abort_reason": "output failed",
+            },
+        }
+    ]
+    client.async_get_failed_summary.return_value = (
+        [
+            {
+                "title": "Example entry",
+                "added_at": "2026-08-05T13:01:00+00:00",
+                "reason": "download failed",
+                "count": 2,
+                "retry_time": "2026-08-05T14:00:00+00:00",
+            }
+        ],
+        3,
+    )
+    client.async_get_pending_approval_summary.return_value = (
+        [{"added": "2026-08-05T12:00:00+00:00"}],
+        2,
+    )
+    client.async_get_schedule_details.return_value = [
+        {"next_run_time": "2026-08-05T14:30:00+00:00"}
+    ]
     coordinator = FlexGetCoordinator(hass, entry, client)
 
     data = await coordinator._async_update_data()
@@ -47,6 +81,12 @@ async def test_coordinator_builds_shared_snapshot(hass: HomeAssistant) -> None:
     assert data.accepted_count == 42
     assert data.last_accepted_task == "a"
     assert data.last_accepted_at == "2026-08-05T13:05:49.010966"
+    assert data.last_execution is not None
+    assert data.last_execution.accepted == 2
+    assert data.latest_failed_execution == data.last_execution
+    assert data.failed_entries.count == 3
+    assert data.pending_approvals.count == 2
+    assert data.next_scheduled_run == "2026-08-05T14:30:00+00:00"
 
     await coordinator._async_update_data()
     client.async_get_schedules.assert_awaited_once()
@@ -62,6 +102,8 @@ async def test_unavailable_instance_raises_update_failed(hass: HomeAssistant) ->
 
     with pytest.raises(UpdateFailed, match="offline"):
         await coordinator._async_update_data()
+    assert coordinator.consecutive_failures == 1
+    assert coordinator.last_failure is not None
 
 
 async def test_extended_endpoint_failure_does_not_hide_core_status(hass: HomeAssistant) -> None:
@@ -74,6 +116,9 @@ async def test_extended_endpoint_failure_does_not_hide_core_status(hass: HomeAss
     client.async_get_queue.return_value = []
     client.async_get_schedules.side_effect = FlexGetConnectionError("not available")
     client.async_get_history_summary.return_value = ([], None)
+    client.async_get_task_status.side_effect = FlexGetConnectionError("not available")
+    client.async_get_failed_summary.side_effect = FlexGetConnectionError("not available")
+    client.async_get_pending_approval_summary.side_effect = FlexGetConnectionError("not available")
     coordinator = FlexGetCoordinator(hass, entry, client)
 
     data = await coordinator._async_update_data()
@@ -81,3 +126,5 @@ async def test_extended_endpoint_failure_does_not_hide_core_status(hass: HomeAss
     assert data.task_count == 1
     assert data.schedule_count == 0
     assert data.accepted_count == 0
+    assert data.failed_entries.count is None
+    assert data.pending_approvals.count is None

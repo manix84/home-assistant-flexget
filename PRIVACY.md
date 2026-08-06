@@ -23,6 +23,11 @@ The integration periodically requests FlexGet version, configured-task, and
 queue/activity data from the endpoint selected by the user. It exposes derived
 monitoring entities in Home Assistant, including versions, task counts, active
 task details, and the last successful update time.
+Slower diagnostic polling also reads task execution summaries, retry failures,
+schedule runtime details, and pending-approval totals when those endpoints are
+available. Entry titles and failure reasons may appear in diagnostic attributes;
+entry URLs and raw log, configuration, variable, and crash-report contents are
+not collected.
 
 Requests go directly from Home Assistant to the configured FlexGet endpoint.
 The integration does not intentionally send this data anywhere else.

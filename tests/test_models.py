@@ -2,11 +2,15 @@
 
 from custom_components.flexget.models import (
     count_tasks,
+    parse_failed_summary,
     parse_history_summary,
+    parse_next_scheduled_run,
+    parse_pending_summary,
     parse_queue,
     parse_queued_task_names,
     parse_schedules,
     parse_task_names,
+    parse_task_status,
     parse_version,
 )
 
@@ -70,3 +74,47 @@ def test_parse_schedules_and_history() -> None:
     assert parse_history_summary(
         [{"task": "sort_anime", "time": "2026-08-05T13:05:49.010966"}], 100
     ) == (100, "sort_anime", "2026-08-05T13:05:49.010966")
+
+
+def test_parse_monitoring_summaries() -> None:
+    status = [
+        {
+            "name": "sort",
+            "last_execution": {
+                "start": "2026-08-05T10:00:00+00:00",
+                "end": "2026-08-05T10:00:05+00:00",
+                "succeeded": False,
+                "produced": 3,
+                "accepted": 1,
+                "rejected": 1,
+                "failed": 1,
+                "abort_reason": "test failure",
+            },
+        }
+    ]
+    latest, failed = parse_task_status(status)
+    assert latest == failed
+    assert latest is not None
+    assert latest.task == "sort"
+    assert latest.accepted == 1
+
+    retry = parse_failed_summary(
+        [{"title": "Example", "count": 2, "retry_time": "2026-08-05T11:00:00+00:00"}],
+        4,
+    )
+    assert retry.count == 4
+    assert retry.latest_attempt_count == 2
+    assert parse_failed_summary(None, None).count is None
+
+    pending = parse_pending_summary([{"added": "2026-08-05T09:00:00+00:00"}], 2)
+    assert pending.count == 2
+    assert pending.oldest_at == "2026-08-05T09:00:00+00:00"
+    assert (
+        parse_next_scheduled_run(
+            [
+                {"next_run_time": "2026-08-05T12:00:00+00:00"},
+                {"next_run_time": "2026-08-05T11:00:00+00:00"},
+            ]
+        )
+        == "2026-08-05T11:00:00+00:00"
+    )

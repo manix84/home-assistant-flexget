@@ -22,6 +22,41 @@ class ActiveTask:
 
 
 @dataclass(frozen=True, slots=True)
+class TaskExecution:
+    """Normalized task execution information."""
+
+    task: str
+    started_at: str | None
+    finished_at: str | None
+    succeeded: bool | None
+    produced: int | None
+    accepted: int | None
+    rejected: int | None
+    failed: int | None
+    abort_reason: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class FailedEntrySummary:
+    """Normalized retry-failure summary."""
+
+    count: int | None
+    latest_at: str | None
+    latest_title: str | None
+    latest_reason: str | None
+    latest_attempt_count: int | None
+    next_retry_at: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class PendingApprovalSummary:
+    """Normalized pending-approval summary."""
+
+    count: int | None
+    oldest_at: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class FlexGetData:
     """One normalized coordinator snapshot."""
 
@@ -38,6 +73,13 @@ class FlexGetData:
     accepted_count: int | None
     last_accepted_task: str | None
     last_accepted_at: str | None
+    last_execution: TaskExecution | None
+    latest_failed_execution: TaskExecution | None
+    failed_entries: FailedEntrySummary
+    next_scheduled_run: str | None
+    scheduler_enabled: bool | None
+    pending_approvals: PendingApprovalSummary
+    response_time_ms: int
     last_success: datetime
 
 
@@ -152,6 +194,84 @@ def parse_history_summary(
     return count, _optional_str(latest.get("task")), _optional_str(latest.get("time"))
 
 
+def parse_task_status(data: Any) -> tuple[TaskExecution | None, TaskExecution | None]:
+    """Return the newest execution and newest latest-per-task failure."""
+    statuses = data if isinstance(data, list) else []
+    executions: list[TaskExecution] = []
+    for status in statuses:
+        if not isinstance(status, dict):
+            continue
+        execution = status.get("last_execution")
+        if not isinstance(execution, dict) or not execution:
+            continue
+        task = status.get("name")
+        if not task:
+            continue
+        executions.append(
+            TaskExecution(
+                task=str(task),
+                started_at=_optional_str(execution.get("start")),
+                finished_at=_optional_str(execution.get("end")),
+                succeeded=_optional_bool(execution.get("succeeded")),
+                produced=_optional_int(execution.get("produced")),
+                accepted=_optional_int(execution.get("accepted")),
+                rejected=_optional_int(execution.get("rejected")),
+                failed=_optional_int(execution.get("failed")),
+                abort_reason=_optional_str(execution.get("abort_reason")),
+            )
+        )
+    newest = max(executions, key=_execution_sort_key, default=None)
+    newest_failure = max(
+        (execution for execution in executions if execution.succeeded is False),
+        key=_execution_sort_key,
+        default=None,
+    )
+    return newest, newest_failure
+
+
+def parse_failed_summary(data: Any, total_count: int | None) -> FailedEntrySummary:
+    """Return remembered failure count and newest retry metadata."""
+    entries = data if isinstance(data, list) else []
+    latest = entries[0] if entries and isinstance(entries[0], dict) else {}
+    return FailedEntrySummary(
+        count=total_count
+        if total_count is not None
+        else (len(entries) if data is not None else None),
+        latest_at=_optional_str(latest.get("added_at")),
+        latest_title=_optional_str(latest.get("title")),
+        latest_reason=_optional_str(latest.get("reason")),
+        latest_attempt_count=_optional_int(latest.get("count")),
+        next_retry_at=_optional_str(latest.get("retry_time")),
+    )
+
+
+def parse_pending_summary(data: Any, total_count: int | None) -> PendingApprovalSummary:
+    """Return unapproved entry count and oldest creation time."""
+    entries = data if isinstance(data, list) else []
+    oldest = entries[0] if entries and isinstance(entries[0], dict) else {}
+    return PendingApprovalSummary(
+        count=total_count
+        if total_count is not None
+        else (len(entries) if data is not None else None),
+        oldest_at=_optional_str(oldest.get("added")),
+    )
+
+
+def parse_next_scheduled_run(data: Any) -> str | None:
+    """Return the earliest next-run timestamp from schedule details."""
+    schedules = data if isinstance(data, list) else []
+    values = [
+        str(schedule["next_run_time"])
+        for schedule in schedules
+        if isinstance(schedule, dict) and schedule.get("next_run_time")
+    ]
+    return min(values, default=None)
+
+
+def _execution_sort_key(execution: TaskExecution) -> str:
+    return execution.finished_at or execution.started_at or ""
+
+
 def _parse_active(value: Any) -> ActiveTask | None:
     if not isinstance(value, dict):
         return None
@@ -182,3 +302,11 @@ def _first_list(data: dict[str, Any], *keys: str) -> list[Any]:
 
 def _optional_str(value: Any) -> str | None:
     return str(value) if value is not None else None
+
+
+def _optional_int(value: Any) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _optional_bool(value: Any) -> bool | None:
+    return value if isinstance(value, bool) else None

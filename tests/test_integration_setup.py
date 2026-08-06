@@ -57,6 +57,38 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
                 )
             ),
         ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_task_status",
+            AsyncMock(
+                return_value=[
+                    {
+                        "name": "sort_anime",
+                        "last_execution": {
+                            "start": "2026-08-05T13:00:00+00:00",
+                            "end": "2026-08-05T13:00:05+00:00",
+                            "succeeded": True,
+                            "produced": 3,
+                            "accepted": 2,
+                            "rejected": 1,
+                            "failed": 0,
+                            "abort_reason": None,
+                        },
+                    }
+                ]
+            ),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_failed_summary",
+            AsyncMock(return_value=([], 0)),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_pending_approval_summary",
+            AsyncMock(return_value=([], 0)),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_schedule_details",
+            AsyncMock(return_value=[]),
+        ),
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -74,6 +106,11 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
     assert hass.states.get("sensor.sort_schedules").state == "1"
     assert hass.states.get("sensor.sort_accepted_entries").state == "42"
     assert hass.states.get("sensor.sort_last_accepted_task").state == "sort_anime"
+    assert hass.states.get("sensor.sort_last_executed_task").state == "sort_anime"
+    assert hass.states.get("sensor.sort_last_execution_accepted").state == "2"
+    assert hass.states.get("binary_sensor.sort_last_execution_succeeded").state == "on"
+    assert hass.states.get("binary_sensor.sort_failed_entries_present").state == "off"
+    assert hass.states.get("binary_sensor.sort_approval_required").state == "off"
 
     registry = er.async_get(hass)
     for entity_id in (

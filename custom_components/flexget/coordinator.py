@@ -6,6 +6,7 @@ import asyncio
 import logging
 from dataclasses import replace
 from datetime import datetime, timedelta
+from time import monotonic
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -19,11 +20,15 @@ from .models import (
     ActiveTask,
     FlexGetData,
     count_tasks,
+    parse_failed_summary,
     parse_history_summary,
+    parse_next_scheduled_run,
+    parse_pending_summary,
     parse_queue,
     parse_queued_task_names,
     parse_schedules,
     parse_task_names,
+    parse_task_status,
     parse_version,
 )
 
@@ -53,11 +58,18 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
         self._active_signature: tuple[str, str | None, str | None] | None = None
         self._active_since: datetime | None = None
         self._extended_updated_at: datetime | None = None
-        self._schedules_data: Any = []
+        self._schedules_data: Any = None
         self._history_data: tuple[Any, int | None] = ([], None)
+        self._task_status_data: Any = []
+        self._failed_data: tuple[Any, int | None] = (None, None)
+        self._pending_data: tuple[Any, int | None] = (None, None)
+        self._schedule_details: Any = []
+        self.consecutive_failures = 0
+        self.last_failure: datetime | None = None
 
     async def _async_update_data(self) -> FlexGetData:
         now = dt_util.utcnow()
+        started = monotonic()
         try:
             version_data, tasks_data, queue_data = await asyncio.gather(
                 self.client.async_get_version(),
@@ -66,9 +78,11 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             )
             await self._async_refresh_extended_data(now)
         except FlexGetAuthenticationError as err:
+            self._record_failure(now)
             self.config_entry.async_start_reauth(self.hass)
             raise UpdateFailed("Authentication failed") from err
         except FlexGetError as err:
+            self._record_failure(now)
             raise UpdateFailed(str(err)) from err
 
         version, latest, api_version = parse_version(version_data)
@@ -78,7 +92,11 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
         accepted_count, last_accepted_task, last_accepted_at = parse_history_summary(
             history_payload, history_total
         )
+        last_execution, latest_failed_execution = parse_task_status(self._task_status_data)
+        failed_payload, failed_total = self._failed_data
+        pending_payload, pending_total = self._pending_data
         active = self._with_state_since(active, now)
+        self.consecutive_failures = 0
         return FlexGetData(
             version=version,
             latest_version=latest,
@@ -93,6 +111,13 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             accepted_count=accepted_count,
             last_accepted_task=last_accepted_task,
             last_accepted_at=last_accepted_at,
+            last_execution=last_execution,
+            latest_failed_execution=latest_failed_execution,
+            failed_entries=parse_failed_summary(failed_payload, failed_total),
+            next_scheduled_run=parse_next_scheduled_run(self._schedule_details),
+            scheduler_enabled=self._scheduler_enabled(),
+            pending_approvals=parse_pending_summary(pending_payload, pending_total),
+            response_time_ms=round((monotonic() - started) * 1000),
             last_success=now,
         )
 
@@ -103,19 +128,52 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             and now - self._extended_updated_at < EXTENDED_UPDATE_INTERVAL
         ):
             return
-        try:
-            schedules, history = await asyncio.gather(
-                self.client.async_get_schedules(),
-                self.client.async_get_history_summary(),
+        await asyncio.gather(
+            self._async_refresh_optional("schedules", self.client.async_get_schedules),
+            self._async_refresh_optional("history", self.client.async_get_history_summary),
+            self._async_refresh_optional("task status", self.client.async_get_task_status),
+            self._async_refresh_optional("failed entries", self.client.async_get_failed_summary),
+            self._async_refresh_optional(
+                "pending approvals", self.client.async_get_pending_approval_summary
+            ),
+        )
+        if self._schedules_data:
+            await self._async_refresh_optional(
+                "schedule details",
+                lambda: self.client.async_get_schedule_details(self._schedules_data),
             )
+        self._extended_updated_at = now
+
+    async def _async_refresh_optional(self, name: str, fetch: Any) -> None:
+        """Refresh one optional endpoint without affecting other groups."""
+        try:
+            value = await fetch()
         except FlexGetAuthenticationError:
             raise
         except FlexGetError as err:
-            _LOGGER.debug("Unable to refresh extended FlexGet data: %s", err)
+            _LOGGER.debug("Unable to refresh FlexGet %s: %s", name, err)
             return
-        self._schedules_data = schedules
-        self._history_data = history
-        self._extended_updated_at = now
+        if name == "schedules":
+            self._schedules_data = value
+        elif name == "history":
+            self._history_data = value
+        elif name == "task status":
+            self._task_status_data = value
+        elif name == "failed entries":
+            self._failed_data = value
+        elif name == "pending approvals":
+            self._pending_data = value
+        elif name == "schedule details":
+            self._schedule_details = value
+
+    def _scheduler_enabled(self) -> bool | None:
+        if self._schedules_data is None:
+            return None
+        return bool(self._schedules_data)
+
+    def _record_failure(self, now: datetime) -> None:
+        self.consecutive_failures += 1
+        self.last_failure = now
 
     def _with_state_since(self, active: ActiveTask | None, now: datetime) -> ActiveTask | None:
         signature = active.signature if active else None
