@@ -1,5 +1,7 @@
 """Tests for the asynchronous FlexGet client."""
 
+from datetime import datetime
+
 import pytest
 from aiohttp import ClientSession, web
 
@@ -63,10 +65,10 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
 
     async def status(request: web.Request) -> web.Response:
         assert request.query["include_execution"] == "true"
-        return web.json_response([{"name": "sort", "last_execution": {}}])
+        return web.json_response([{"id": 4, "name": "sort", "last_execution": {}}])
 
     async def failed(request: web.Request) -> web.Response:
-        assert request.query["per_page"] == "1"
+        assert request.query["per_page"] == "100"
         return web.json_response([], headers={"Total-Count": "3"})
 
     async def pending(request: web.Request) -> web.Response:
@@ -77,11 +79,17 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
     async def schedule(request: web.Request) -> web.Response:
         return web.json_response({"id": 17, "next_run_time": "2026-08-05T14:00:00+00:00"})
 
+    async def executions(request: web.Request) -> web.Response:
+        assert request.query["start_date"] == "2026-08-05T00:00:00+00:00"
+        assert request.query["produced"] == "false"
+        return web.json_response([{"succeeded": True, "accepted": 1}])
+
     app = web.Application()
     app.router.add_get("/api/tasks/status/", status)
     app.router.add_get("/api/failed/", failed)
     app.router.add_get("/api/pending/", pending)
     app.router.add_get("/api/schedules/17/", schedule)
+    app.router.add_get("/api/tasks/status/4/executions/", executions)
     server = await aiohttp_server(app)
     async with ClientSession() as session:
         client = FlexGetClient(session, FlexGetEndpoint("127.0.0.1", server.port), "token")
@@ -89,6 +97,10 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
         assert (await client.async_get_failed_summary())[1] == 3
         assert (await client.async_get_pending_approval_summary())[1] == 2
         assert (await client.async_get_schedule_details([{"id": 17}]))[0]["id"] == 17
+        recent = await client.async_get_recent_executions(
+            [{"id": 4}], datetime.fromisoformat("2026-08-05T00:00:00+00:00")
+        )
+        assert recent[0][0]["accepted"] == 1
 
 
 @pytest.mark.parametrize(

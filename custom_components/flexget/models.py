@@ -46,6 +46,8 @@ class FailedEntrySummary:
     latest_reason: str | None
     latest_attempt_count: int | None
     next_retry_at: str | None
+    overdue_count: int | None
+    highest_attempt_count: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +56,25 @@ class PendingApprovalSummary:
 
     count: int | None
     oldest_at: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class OperationalStats:
+    """Normalized execution statistics for a recent time window."""
+
+    successful_executions: int | None
+    failed_executions: int | None
+    accepted: int | None
+    rejected: int | None
+    failed_entries: int | None
+    never_run_tasks: int | None
+
+    @property
+    def success_rate(self) -> float | None:
+        if self.successful_executions is None or self.failed_executions is None:
+            return None
+        total = self.successful_executions + self.failed_executions
+        return round(self.successful_executions / total * 100, 1) if total else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +100,7 @@ class FlexGetData:
     next_scheduled_run: str | None
     scheduler_enabled: bool | None
     pending_approvals: PendingApprovalSummary
+    operational_stats: OperationalStats
     response_time_ms: int
     last_success: datetime
 
@@ -229,7 +251,9 @@ def parse_task_status(data: Any) -> tuple[TaskExecution | None, TaskExecution | 
     return newest, newest_failure
 
 
-def parse_failed_summary(data: Any, total_count: int | None) -> FailedEntrySummary:
+def parse_failed_summary(
+    data: Any, total_count: int | None, now: datetime | None = None
+) -> FailedEntrySummary:
     """Return remembered failure count and newest retry metadata."""
     entries = data if isinstance(data, list) else []
     latest = entries[0] if entries and isinstance(entries[0], dict) else {}
@@ -242,6 +266,24 @@ def parse_failed_summary(data: Any, total_count: int | None) -> FailedEntrySumma
         latest_reason=_optional_str(latest.get("reason")),
         latest_attempt_count=_optional_int(latest.get("count")),
         next_retry_at=_optional_str(latest.get("retry_time")),
+        overdue_count=(
+            sum(1 for entry in entries if _is_overdue(entry, now))
+            if data is not None and now
+            else None
+        ),
+        highest_attempt_count=(
+            max(
+                (
+                    count
+                    for entry in entries
+                    if isinstance(entry, dict)
+                    and (count := _optional_int(entry.get("count"))) is not None
+                ),
+                default=0,
+            )
+            if data is not None
+            else None
+        ),
     )
 
 
@@ -266,6 +308,60 @@ def parse_next_scheduled_run(data: Any) -> str | None:
         if isinstance(schedule, dict) and schedule.get("next_run_time")
     ]
     return min(values, default=None)
+
+
+def parse_operational_stats(statuses: Any, execution_groups: Any) -> OperationalStats:
+    """Aggregate bounded recent execution data and never-run tasks."""
+    status_items = statuses if isinstance(statuses, list) else []
+    groups = execution_groups if isinstance(execution_groups, list) else []
+    executions = [
+        execution
+        for group in groups
+        if isinstance(group, list)
+        for execution in group
+        if isinstance(execution, dict)
+    ]
+    available = execution_groups is not None
+    return OperationalStats(
+        successful_executions=(
+            sum(execution.get("succeeded") is True for execution in executions)
+            if available
+            else None
+        ),
+        failed_executions=(
+            sum(execution.get("succeeded") is False for execution in executions)
+            if available
+            else None
+        ),
+        accepted=_sum_execution_field(executions, "accepted") if available else None,
+        rejected=_sum_execution_field(executions, "rejected") if available else None,
+        failed_entries=_sum_execution_field(executions, "failed") if available else None,
+        never_run_tasks=(
+            sum(
+                not isinstance(status, dict) or not status.get("last_execution")
+                for status in status_items
+            )
+            if statuses is not None
+            else None
+        ),
+    )
+
+
+def _sum_execution_field(executions: list[dict[str, Any]], field: str) -> int:
+    return sum(value for execution in executions if (value := _optional_int(execution.get(field))))
+
+
+def _is_overdue(entry: Any, now: datetime) -> bool:
+    if not isinstance(entry, dict) or not entry.get("retry_time"):
+        return False
+    try:
+        retry_at = datetime.fromisoformat(str(entry["retry_time"]).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    comparison_now = now
+    if retry_at.tzinfo is None:
+        comparison_now = now.replace(tzinfo=None)
+    return retry_at < comparison_now
 
 
 def _execution_sort_key(execution: TaskExecution) -> str:

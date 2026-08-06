@@ -62,6 +62,7 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
             AsyncMock(
                 return_value=[
                     {
+                        "id": 1,
                         "name": "sort_anime",
                         "last_execution": {
                             "start": "2026-08-05T13:00:00+00:00",
@@ -89,6 +90,12 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
             "custom_components.flexget.api.FlexGetClient.async_get_schedule_details",
             AsyncMock(return_value=[]),
         ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_recent_executions",
+            AsyncMock(
+                return_value=[[{"succeeded": True, "accepted": 2, "rejected": 1, "failed": 0}]]
+            ),
+        ),
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -111,6 +118,8 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
     assert hass.states.get("binary_sensor.sort_last_execution_succeeded").state == "on"
     assert hass.states.get("binary_sensor.sort_failed_entries_present").state == "off"
     assert hass.states.get("binary_sensor.sort_approval_required").state == "off"
+    assert hass.states.get("sensor.sort_successful_executions_24_h").state == "1"
+    assert hass.states.get("sensor.sort_execution_success_rate_24_h").state == "100.0"
 
     registry = er.async_get(hass)
     for entity_id in (

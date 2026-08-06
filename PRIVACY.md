@@ -28,6 +28,8 @@ schedule runtime details, and pending-approval totals when those endpoints are
 available. Entry titles and failure reasons may appear in diagnostic attributes;
 entry URLs and raw log, configuration, variable, and crash-report contents are
 not collected.
+Recent execution records are aggregated locally into 24-hour counts and rates;
+individual historical execution records are not exposed as Home Assistant state.
 
 Requests go directly from Home Assistant to the configured FlexGet endpoint.
 The integration does not intentionally send this data anywhere else.

@@ -11,6 +11,7 @@ from custom_components.flexget.diagnostics import async_get_config_entry_diagnos
 from custom_components.flexget.models import (
     FailedEntrySummary,
     FlexGetData,
+    OperationalStats,
     PendingApprovalSummary,
 )
 
@@ -39,10 +40,11 @@ async def test_diagnostics_redact_token(hass: HomeAssistant) -> None:
             last_accepted_at="2026-08-05T13:05:49.010966",
             last_execution=None,
             latest_failed_execution=None,
-            failed_entries=FailedEntrySummary(None, None, None, None, None, None),
+            failed_entries=FailedEntrySummary(None, None, None, None, None, None, None, None),
             next_scheduled_run=None,
             scheduler_enabled=True,
             pending_approvals=PendingApprovalSummary(None, None),
+            operational_stats=OperationalStats(None, None, None, None, None, None),
             response_time_ms=25,
             last_success=datetime.now(UTC),
         ),

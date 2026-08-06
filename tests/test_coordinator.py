@@ -33,6 +33,7 @@ async def test_coordinator_builds_shared_snapshot(hass: HomeAssistant) -> None:
     )
     client.async_get_task_status.return_value = [
         {
+            "id": 1,
             "name": "a",
             "last_execution": {
                 "start": "2026-08-05T13:00:00+00:00",
@@ -65,6 +66,12 @@ async def test_coordinator_builds_shared_snapshot(hass: HomeAssistant) -> None:
     client.async_get_schedule_details.return_value = [
         {"next_run_time": "2026-08-05T14:30:00+00:00"}
     ]
+    client.async_get_recent_executions.return_value = [
+        [
+            {"succeeded": True, "accepted": 2, "rejected": 1, "failed": 0},
+            {"succeeded": False, "accepted": 0, "rejected": 0, "failed": 1},
+        ]
+    ]
     coordinator = FlexGetCoordinator(hass, entry, client)
 
     data = await coordinator._async_update_data()
@@ -87,6 +94,9 @@ async def test_coordinator_builds_shared_snapshot(hass: HomeAssistant) -> None:
     assert data.failed_entries.count == 3
     assert data.pending_approvals.count == 2
     assert data.next_scheduled_run == "2026-08-05T14:30:00+00:00"
+    assert data.operational_stats.successful_executions == 1
+    assert data.operational_stats.failed_executions == 1
+    assert data.operational_stats.success_rate == 50.0
 
     await coordinator._async_update_data()
     client.async_get_schedules.assert_awaited_once()
@@ -119,6 +129,7 @@ async def test_extended_endpoint_failure_does_not_hide_core_status(hass: HomeAss
     client.async_get_task_status.side_effect = FlexGetConnectionError("not available")
     client.async_get_failed_summary.side_effect = FlexGetConnectionError("not available")
     client.async_get_pending_approval_summary.side_effect = FlexGetConnectionError("not available")
+    client.async_get_recent_executions.side_effect = FlexGetConnectionError("not available")
     coordinator = FlexGetCoordinator(hass, entry, client)
 
     data = await coordinator._async_update_data()

@@ -1,10 +1,13 @@
 """Tests for API response normalization."""
 
+from datetime import datetime
+
 from custom_components.flexget.models import (
     count_tasks,
     parse_failed_summary,
     parse_history_summary,
     parse_next_scheduled_run,
+    parse_operational_stats,
     parse_pending_summary,
     parse_queue,
     parse_queued_task_names,
@@ -101,9 +104,12 @@ def test_parse_monitoring_summaries() -> None:
     retry = parse_failed_summary(
         [{"title": "Example", "count": 2, "retry_time": "2026-08-05T11:00:00+00:00"}],
         4,
+        datetime.fromisoformat("2026-08-05T12:00:00+00:00"),
     )
     assert retry.count == 4
     assert retry.latest_attempt_count == 2
+    assert retry.overdue_count == 1
+    assert retry.highest_attempt_count == 2
     assert parse_failed_summary(None, None).count is None
 
     pending = parse_pending_summary([{"added": "2026-08-05T09:00:00+00:00"}], 2)
@@ -118,3 +124,19 @@ def test_parse_monitoring_summaries() -> None:
         )
         == "2026-08-05T11:00:00+00:00"
     )
+
+    stats = parse_operational_stats(
+        [{"id": 1, "last_execution": {}}, {"id": 2, "last_execution": {"id": 3}}],
+        [
+            [
+                {"succeeded": True, "accepted": 3, "rejected": 1, "failed": 0},
+                {"succeeded": False, "accepted": 0, "rejected": 0, "failed": 2},
+            ]
+        ],
+    )
+    assert stats.successful_executions == 1
+    assert stats.failed_executions == 1
+    assert stats.accepted == 3
+    assert stats.failed_entries == 2
+    assert stats.never_run_tasks == 1
+    assert stats.success_rate == 50.0

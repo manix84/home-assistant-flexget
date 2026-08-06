@@ -13,7 +13,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
@@ -244,6 +244,76 @@ DESCRIPTIONS = (
         value_fn=lambda data: data.pending_approvals.count,
         attributes_fn=lambda data: {"oldest_pending_at": data.pending_approvals.oldest_at},
     ),
+    *(
+        FlexGetSensorDescription(
+            key=f"{field}_24h",
+            translation_key=f"{field}_24h",
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            suggested_display_precision=0,
+            value_fn=lambda data, field=field: getattr(data.operational_stats, field),
+        )
+        for field in (
+            "successful_executions",
+            "failed_executions",
+            "accepted",
+            "rejected",
+            "failed_entries",
+        )
+    ),
+    FlexGetSensorDescription(
+        key="execution_success_rate_24h",
+        translation_key="execution_success_rate_24h",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=1,
+        value_fn=lambda data: data.operational_stats.success_rate,
+    ),
+    FlexGetSensorDescription(
+        key="never_run_task_count",
+        translation_key="never_run_task_count",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.operational_stats.never_run_tasks,
+    ),
+    FlexGetSensorDescription(
+        key="time_since_last_acceptance",
+        translation_key="time_since_last_acceptance",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: _seconds_since(data.last_accepted_at),
+    ),
+    FlexGetSensorDescription(
+        key="overdue_retry_count",
+        translation_key="overdue_retry_count",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.failed_entries.overdue_count,
+    ),
+    FlexGetSensorDescription(
+        key="highest_retry_count",
+        translation_key="highest_retry_count",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: data.failed_entries.highest_attempt_count,
+    ),
+    FlexGetSensorDescription(
+        key="oldest_pending_approval_age",
+        translation_key="oldest_pending_approval_age",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        suggested_display_precision=0,
+        value_fn=lambda data: _seconds_since(data.pending_approvals.oldest_at),
+    ),
     FlexGetSensorDescription(
         key="last_successful_update",
         translation_key="last_successful_update",
@@ -273,6 +343,11 @@ def _execution_duration(data: FlexGetData) -> float | None:
 def _seconds_until(value: str | None) -> int | None:
     timestamp = _timestamp(value)
     return max(0, int((timestamp - dt_util.utcnow()).total_seconds())) if timestamp else None
+
+
+def _seconds_since(value: str | None) -> int | None:
+    timestamp = _timestamp(value)
+    return max(0, int((dt_util.utcnow() - timestamp).total_seconds())) if timestamp else None
 
 
 async def async_setup_entry(

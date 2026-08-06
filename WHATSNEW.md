@@ -23,6 +23,8 @@ for multiple daemon instances.
   task-running, and update-available entities.
 - Read-only task outcome, failed-entry, scheduling, pending-approval, response-time,
   and polling-health monitoring, with optional endpoint failures kept isolated.
+- Rolling 24-hour task results, acceptance recency, never-run task, retry-health,
+  and pending-approval age monitoring.
 - Reauthentication and options for token, display name, and polling interval.
 - Credential-redacted diagnostics.
 - HACS metadata, automated tests, linting, and repository validation.

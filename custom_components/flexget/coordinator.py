@@ -23,6 +23,7 @@ from .models import (
     parse_failed_summary,
     parse_history_summary,
     parse_next_scheduled_run,
+    parse_operational_stats,
     parse_pending_summary,
     parse_queue,
     parse_queued_task_names,
@@ -64,6 +65,7 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
         self._failed_data: tuple[Any, int | None] = (None, None)
         self._pending_data: tuple[Any, int | None] = (None, None)
         self._schedule_details: Any = []
+        self._recent_executions: Any = None
         self.consecutive_failures = 0
         self.last_failure: datetime | None = None
 
@@ -113,10 +115,13 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             last_accepted_at=last_accepted_at,
             last_execution=last_execution,
             latest_failed_execution=latest_failed_execution,
-            failed_entries=parse_failed_summary(failed_payload, failed_total),
+            failed_entries=parse_failed_summary(failed_payload, failed_total, now),
             next_scheduled_run=parse_next_scheduled_run(self._schedule_details),
             scheduler_enabled=self._scheduler_enabled(),
             pending_approvals=parse_pending_summary(pending_payload, pending_total),
+            operational_stats=parse_operational_stats(
+                self._task_status_data, self._recent_executions
+            ),
             response_time_ms=round((monotonic() - started) * 1000),
             last_success=now,
         )
@@ -142,6 +147,13 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
                 "schedule details",
                 lambda: self.client.async_get_schedule_details(self._schedules_data),
             )
+        if self._task_status_data:
+            await self._async_refresh_optional(
+                "recent executions",
+                lambda: self.client.async_get_recent_executions(
+                    self._task_status_data, now - timedelta(hours=24)
+                ),
+            )
         self._extended_updated_at = now
 
     async def _async_refresh_optional(self, name: str, fetch: Any) -> None:
@@ -165,6 +177,8 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             self._pending_data = value
         elif name == "schedule details":
             self._schedule_details = value
+        elif name == "recent executions":
+            self._recent_executions = value
 
     def _scheduler_enabled(self) -> bool | None:
         if self._schedules_data is None:

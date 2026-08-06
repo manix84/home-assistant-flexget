@@ -1,9 +1,12 @@
 """Binary sensors for FlexGet."""
 
+from datetime import timedelta
+
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from . import FlexGetConfigEntry
 from .entity import FlexGetEntity
@@ -23,6 +26,7 @@ async def async_setup_entry(
             FlexGetFailedEntriesBinarySensor(entry),
             FlexGetSchedulerEnabledBinarySensor(entry),
             FlexGetApprovalRequiredBinarySensor(entry),
+            FlexGetAcceptanceActivityBinarySensor(entry),
         ]
     )
 
@@ -163,3 +167,26 @@ class FlexGetApprovalRequiredBinarySensor(FlexGetEntity, BinarySensorEntity):
         data = self.coordinator.data
         count = data.pending_approvals.count if data else None
         return bool(count) if count is not None else None
+
+
+class FlexGetAcceptanceActivityBinarySensor(FlexGetEntity, BinarySensorEntity):
+    """Report whether FlexGet accepted an entry in the last 24 hours."""
+
+    entity_description = BinarySensorEntityDescription(
+        key="acceptance_activity",
+        translation_key="acceptance_activity",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+    def __init__(self, entry: FlexGetConfigEntry) -> None:
+        super().__init__(entry, self.entity_description.key)
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        if not data or not data.last_accepted_at:
+            return None
+        parsed = dt_util.parse_datetime(data.last_accepted_at)
+        if not parsed:
+            return None
+        return dt_util.utcnow() - dt_util.as_utc(parsed) <= timedelta(hours=24)

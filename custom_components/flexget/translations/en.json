@@ -73,7 +73,8 @@
       "last_execution_succeeded": {"name": "Last execution succeeded"},
       "failed_entries": {"name": "Failed entries present"},
       "scheduler_enabled": {"name": "Scheduler enabled"},
-      "approval_required": {"name": "Approval required"}
+      "approval_required": {"name": "Approval required"},
+      "acceptance_activity": {"name": "Acceptance activity"}
     },
     "sensor": {
       "version": {"name": "Version"},
@@ -101,7 +102,18 @@
       "next_retry_time": {"name": "Next retry time"},
       "next_scheduled_run": {"name": "Next scheduled run"},
       "time_until_next_run": {"name": "Time until next run"},
-      "pending_approval_count": {"name": "Pending approvals"}
+      "pending_approval_count": {"name": "Pending approvals"},
+      "successful_executions_24h": {"name": "Successful executions (24 h)"},
+      "failed_executions_24h": {"name": "Failed executions (24 h)"},
+      "accepted_24h": {"name": "Accepted entries (24 h)"},
+      "rejected_24h": {"name": "Rejected entries (24 h)"},
+      "failed_entries_24h": {"name": "Failed entries (24 h)"},
+      "execution_success_rate_24h": {"name": "Execution success rate (24 h)"},
+      "never_run_task_count": {"name": "Never-run tasks"},
+      "time_since_last_acceptance": {"name": "Time since last acceptance"},
+      "overdue_retry_count": {"name": "Overdue retries"},
+      "highest_retry_count": {"name": "Highest retry count"},
+      "oldest_pending_approval_age": {"name": "Oldest pending approval age"}
     }
   }
 }
