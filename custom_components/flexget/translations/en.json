@@ -57,19 +57,30 @@
         "data": {
           "instance_name": "Instance name",
           "token": "API token",
-          "scan_interval": "Polling interval (seconds)"
+          "scan_interval": "Polling interval (seconds)",
+          "enable_controls": "Enable task controls"
         },
         "data_description": {
-          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. For a specific configuration file, run `flexget -c /path/to/config.yml web showtoken`."
+          "token": "On the machine hosting FlexGet, run `flexget web showtoken`. For a specific configuration file, run `flexget -c /path/to/config.yml web showtoken`.",
+          "enable_controls": "Allows Home Assistant to run tasks and change their `manual` setting. FlexGet may reformat its YAML configuration and remove comments when a task is changed."
         }
       }
     }
   },
   "entity": {
+    "button": {
+      "run_task": {"name": "Run {task}"}
+    },
     "binary_sensor": {
       "connectivity": {"name": "Connectivity"},
       "task_running": {"name": "Task running"},
-      "update_available": {"name": "Update available"}
+      "update_available": {"name": "Update available"},
+      "last_execution_succeeded": {"name": "Last execution succeeded"},
+      "failed_entries": {"name": "Failed entries present"},
+      "scheduler_enabled": {"name": "Scheduler enabled"},
+      "approval_required": {"name": "Approval required"},
+      "acceptance_activity": {"name": "Acceptance activity"},
+      "irc_healthy": {"name": "IRC healthy"}
     },
     "sensor": {
       "version": {"name": "Version"},
@@ -80,7 +91,49 @@
       "schedule_count": {"name": "Schedules"},
       "accepted_count": {"name": "Accepted entries"},
       "last_accepted_task": {"name": "Last accepted task"},
-      "last_successful_update": {"name": "Last successful update"}
+      "last_successful_update": {"name": "Last successful update"},
+      "response_time": {"name": "API response time"},
+      "consecutive_failed_polls": {"name": "Consecutive failed polls"},
+      "active_task_duration": {"name": "Active task duration"},
+      "last_executed_task": {"name": "Last executed task"},
+      "last_execution_finished": {"name": "Last execution finished"},
+      "last_execution_duration": {"name": "Last execution duration"},
+      "last_execution_accepted": {"name": "Last execution accepted"},
+      "last_execution_rejected": {"name": "Last execution rejected"},
+      "last_execution_failed": {"name": "Last execution failed"},
+      "latest_failed_task": {"name": "Latest failed task"},
+      "latest_failed_execution": {"name": "Latest failed execution"},
+      "last_accepted_time": {"name": "Last accepted time"},
+      "failed_entry_count": {"name": "Failed entries"},
+      "next_retry_time": {"name": "Next retry time"},
+      "next_scheduled_run": {"name": "Next scheduled run"},
+      "time_until_next_run": {"name": "Time until next run"},
+      "pending_approval_count": {"name": "Pending approvals"},
+      "successful_executions_24h": {"name": "Successful executions (24 h)"},
+      "failed_executions_24h": {"name": "Failed executions (24 h)"},
+      "accepted_24h": {"name": "Accepted entries (24 h)"},
+      "rejected_24h": {"name": "Rejected entries (24 h)"},
+      "failed_entries_24h": {"name": "Failed entries (24 h)"},
+      "execution_success_rate_24h": {"name": "Execution success rate (24 h)"},
+      "never_run_task_count": {"name": "Never-run tasks"},
+      "time_since_last_acceptance": {"name": "Time since last acceptance"},
+      "overdue_retry_count": {"name": "Overdue retries"},
+      "highest_retry_count": {"name": "Highest retry count"},
+      "oldest_pending_approval_age": {"name": "Oldest pending approval age"},
+      "registered_plugin_count": {"name": "Registered plugins"},
+      "builtin_plugin_count": {"name": "Built-in plugins"},
+      "third_party_plugin_count": {"name": "Third-party plugins"},
+      "debug_plugin_count": {"name": "Debug plugins"},
+      "irc_connection_count": {"name": "IRC connections"},
+      "irc_connected_count": {"name": "Connected IRC connections"},
+      "irc_connected_channel_count": {"name": "Connected IRC channels"},
+      "tracked_series_count": {"name": "Tracked series"},
+      "entry_list_count": {"name": "Entry lists"},
+      "movie_list_count": {"name": "Movie lists"},
+      "pending_list_count": {"name": "Pending lists"}
+    },
+    "switch": {
+      "task_automatic_execution": {"name": "{task} automatic execution"}
     }
   }
 }

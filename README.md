@@ -13,9 +13,12 @@ host are supported when they use different ports.
 - 📡 Optional advanced zeroconf discovery through `_flexget._tcp.local.`
 - 🧩 Duplicate suppression by normalized `host:port`
 - 🔄 One shared coordinator request cycle per instance
-- 📊 Connectivity, version, task count, queue, active task, and update sensors
+- 📊 Connectivity, version, task, queue, execution-result, retry-failure,
+  scheduling, pending-approval, API-health, plugin, IRC, series, and managed-list
+  sensors
 - 🔐 Token reauthentication, display-name/token/polling options, and redacted diagnostics
-- 👀 Read-only API access; the integration cannot execute tasks or manage daemons
+- 🛡️ Monitoring-only by default, with explicitly enabled per-task automatic-execution
+  switches and Run buttons
 
 ## 🚀 Install
 
@@ -49,6 +52,23 @@ token. This is the normal and recommended setup:
 > 🔐 **Security:** The integration sends the token only in the
 > `Authorization: Token ...` header.
 > Tokens are never exposed as entity attributes or diagnostics.
+
+## 🎛️ Optional task controls
+
+Task controls are disabled by default. To enable them, open the integration's
+options and select **Enable task controls**. Home Assistant then creates an
+**Automatic execution** switch and **Run** button for each configured task.
+
+Turning automatic execution off adds `manual: true` to that task. Turning it on
+sets `manual: false`, overriding any manual-only setting inherited from a
+template. The Run button explicitly queues that task and can still run a task
+whose automatic execution switch is off. A switch change is rejected while its
+task is running.
+
+> ⚠️ **Configuration warning:** FlexGet's task update API rewrites its YAML
+> configuration and may change layout or remove comments. Back up commented or
+> carefully formatted configurations before enabling controls. Control changes
+> are serialized, reread immediately before modification, and verified afterward.
 
 ## 📡 Advanced: optional Avahi discovery
 

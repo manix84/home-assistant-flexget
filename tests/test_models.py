@@ -1,12 +1,21 @@
 """Tests for API response normalization."""
 
+from datetime import datetime
+
 from custom_components.flexget.models import (
     count_tasks,
+    parse_failed_summary,
     parse_history_summary,
+    parse_inventory,
+    parse_next_scheduled_run,
+    parse_operational_stats,
+    parse_pending_summary,
     parse_queue,
     parse_queued_task_names,
     parse_schedules,
+    parse_task_controls,
     parse_task_names,
+    parse_task_status,
     parse_version,
 )
 
@@ -27,6 +36,19 @@ def test_count_tasks_handles_supported_shapes() -> None:
 def test_parse_task_names_handles_live_list_shape() -> None:
     """Parse the string-list response returned by the Sort daemon."""
     assert parse_task_names(["sort_tv", "extract_all"]) == ("extract_all", "sort_tv")
+
+
+def test_parse_task_controls_uses_manual_setting() -> None:
+    controls = parse_task_controls(
+        [
+            {"name": "automatic", "config": {"rss": "https://example.test/feed"}},
+            {"name": "manual", "config": {"manual": True}},
+        ]
+    )
+    assert [(control.name, control.automatic_execution) for control in controls] == [
+        ("automatic", True),
+        ("manual", False),
+    ]
 
 
 def test_parse_queue_with_active_task() -> None:
@@ -70,3 +92,95 @@ def test_parse_schedules_and_history() -> None:
     assert parse_history_summary(
         [{"task": "sort_anime", "time": "2026-08-05T13:05:49.010966"}], 100
     ) == (100, "sort_anime", "2026-08-05T13:05:49.010966")
+
+
+def test_parse_monitoring_summaries() -> None:
+    status = [
+        {
+            "name": "sort",
+            "last_execution": {
+                "start": "2026-08-05T10:00:00+00:00",
+                "end": "2026-08-05T10:00:05+00:00",
+                "succeeded": False,
+                "produced": 3,
+                "accepted": 1,
+                "rejected": 1,
+                "failed": 1,
+                "abort_reason": "test failure",
+            },
+        }
+    ]
+    latest, failed = parse_task_status(status)
+    assert latest == failed
+    assert latest is not None
+    assert latest.task == "sort"
+    assert latest.accepted == 1
+
+    retry = parse_failed_summary(
+        [{"title": "Example", "count": 2, "retry_time": "2026-08-05T11:00:00+00:00"}],
+        4,
+        datetime.fromisoformat("2026-08-05T12:00:00+00:00"),
+    )
+    assert retry.count == 4
+    assert retry.latest_attempt_count == 2
+    assert retry.overdue_count == 1
+    assert retry.highest_attempt_count == 2
+    assert parse_failed_summary(None, None).count is None
+
+    pending = parse_pending_summary([{"added": "2026-08-05T09:00:00+00:00"}], 2)
+    assert pending.count == 2
+    assert pending.oldest_at == "2026-08-05T09:00:00+00:00"
+    assert (
+        parse_next_scheduled_run(
+            [
+                {"next_run_time": "2026-08-05T12:00:00+00:00"},
+                {"next_run_time": "2026-08-05T11:00:00+00:00"},
+            ]
+        )
+        == "2026-08-05T11:00:00+00:00"
+    )
+
+    stats = parse_operational_stats(
+        [{"id": 1, "last_execution": {}}, {"id": 2, "last_execution": {"id": 3}}],
+        [
+            [
+                {"succeeded": True, "accepted": 3, "rejected": 1, "failed": 0},
+                {"succeeded": False, "accepted": 0, "rejected": 0, "failed": 2},
+            ]
+        ],
+    )
+    assert stats.successful_executions == 1
+    assert stats.failed_executions == 1
+    assert stats.accepted == 3
+    assert stats.failed_entries == 2
+    assert stats.never_run_tasks == 1
+    assert stats.success_rate == 50.0
+
+
+def test_parse_inventory_exposes_only_counts() -> None:
+    inventory = parse_inventory(
+        [
+            {"name": "rss", "builtin": True, "debug": False},
+            {"name": "custom", "builtin": False, "debug": True},
+        ],
+        [
+            {"one": {"alive": True, "connected_channels": ["private-channel"]}},
+            {"two": {"alive": False, "connected_channels": []}},
+        ],
+        12,
+        [{"name": "entries"}],
+        [{"name": "movies"}, {"name": "archive"}],
+        [],
+    )
+    assert inventory.plugin_count == 2
+    assert inventory.builtin_plugin_count == 1
+    assert inventory.third_party_plugin_count == 1
+    assert inventory.debug_plugin_count == 1
+    assert inventory.irc_connection_count == 2
+    assert inventory.irc_connected_count == 1
+    assert inventory.irc_connected_channel_count == 1
+    assert inventory.irc_healthy is False
+    assert inventory.tracked_series_count == 12
+    assert inventory.entry_list_count == 1
+    assert inventory.movie_list_count == 2
+    assert inventory.pending_list_count == 0

@@ -3,10 +3,10 @@
 This file highlights user-visible changes. For the complete commit history, see
 the repository's Git history and release notes.
 
-## 🚧 0.1.0 — Unreleased
+## 🚧 0.2.0 — Unreleased
 
-The first Home Assistant FlexGet release introduces local, read-only monitoring
-for multiple daemon instances.
+The first Home Assistant FlexGet release introduces local monitoring for
+multiple daemon instances and optional, explicitly enabled task controls.
 
 ### ✨ Added
 
@@ -21,7 +21,15 @@ for multiple daemon instances.
   names available as attributes instead of measurement-style graph entities.
 - Schedule count, accepted-history count, latest version, last accepted task,
   task-running, and update-available entities.
+- Read-only task outcome, failed-entry, scheduling, pending-approval, response-time,
+  and polling-health monitoring, with optional endpoint failures kept isolated.
+- Rolling 24-hour task results, acceptance recency, never-run task, retry-health,
+  and pending-approval age monitoring.
+- Privacy-conscious plugin, IRC, tracked-series, and managed-list inventory
+  totals without exposing connection, channel, list, or media names.
 - Reauthentication and options for token, display name, and polling interval.
+- Opt-in per-task automatic-execution switches and explicit Run buttons, with
+  serialized configuration writes and post-write verification.
 - Credential-redacted diagnostics.
 - HACS metadata, automated tests, linting, and repository validation.
 - Local Home Assistant and HACS branding using the official FlexGet icon and
@@ -33,7 +41,8 @@ for multiple daemon instances.
 
 - API tokens remain in Home Assistant config-entry storage.
 - Tokens are excluded from entities and redacted from diagnostics.
-- The integration provides no task execution or daemon-management controls.
+- Task controls are disabled by default, and no daemon-management controls are
+  provided.
 - No telemetry, analytics, or cloud service is used.
 
 ### 🐛 Fixed

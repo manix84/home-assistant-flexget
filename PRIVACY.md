@@ -1,7 +1,8 @@
 # 🛡️ Privacy
 
-Home Assistant FlexGet is a local, read-only integration. It does not provide
-telemetry, analytics, advertising, or cloud services.
+Home Assistant FlexGet provides local monitoring and optional local task
+controls. It does not provide telemetry, analytics, advertising, or cloud
+services.
 
 ## 📦 Data the integration stores
 
@@ -12,6 +13,7 @@ Each Home Assistant config entry stores:
 - the API token;
 - the instance display name;
 - the polling interval.
+- whether task controls are enabled.
 
 This information remains in Home Assistant's config-entry storage. The API
 token is required for authenticated requests and is never exposed as an entity
@@ -23,6 +25,25 @@ The integration periodically requests FlexGet version, configured-task, and
 queue/activity data from the endpoint selected by the user. It exposes derived
 monitoring entities in Home Assistant, including versions, task counts, active
 task details, and the last successful update time.
+Slower diagnostic polling also reads task execution summaries, retry failures,
+schedule runtime details, and pending-approval totals when those endpoints are
+available. Entry titles and failure reasons may appear in diagnostic attributes;
+entry URLs and raw log, configuration, variable, and crash-report contents are
+not collected.
+Recent execution records are aggregated locally into 24-hour counts and rates;
+individual historical execution records are not exposed as Home Assistant state.
+Optional plugin, IRC, series, and managed-list endpoints are reduced to numeric
+inventory and connection-health totals. Plugin names, IRC servers and channels,
+list names, and series or movie titles are not exposed as states, attributes, or
+diagnostics.
+
+When task controls are explicitly enabled, the integration reads full task
+configuration objects to determine each task's `manual` setting. These objects
+are processed in memory and are not exposed in entities or diagnostics. A switch
+change sends the latest task configuration back to FlexGet after setting only
+the task-level `manual` value. A Run button sends the selected task name to the
+FlexGet execution API. FlexGet may reformat its YAML file or remove comments
+when its configuration API writes a task.
 
 Requests go directly from Home Assistant to the configured FlexGet endpoint.
 The integration does not intentionally send this data anywhere else.
