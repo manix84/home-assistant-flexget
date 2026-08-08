@@ -3,7 +3,7 @@
 This file highlights user-visible changes. For the complete commit history, see
 the repository's Git history and release notes.
 
-## 🚧 0.1.0 — Unreleased
+## 🚧 0.2.0 — Unreleased
 
 The first Home Assistant FlexGet release introduces local monitoring for
 multiple daemon instances and optional, explicitly enabled task controls.

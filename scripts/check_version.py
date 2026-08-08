@@ -19,10 +19,17 @@ def _read_versions() -> dict[str, str]:
         manifest = json.load(manifest_file)
     with (ROOT / "pyproject.toml").open("rb") as pyproject_file:
         pyproject = tomllib.load(pyproject_file)
+    with (ROOT / "release-please-config.json").open(encoding="utf-8") as release_file:
+        release_config = json.load(release_file)
+    release_manifest = json.loads(
+        (ROOT / ".release-please-manifest.json").read_text(encoding="utf-8")
+    )
+    release_version = release_manifest.get(".", release_config["packages"]["."]["initial-version"])
     return {
         "version.txt": (ROOT / "version.txt").read_text(encoding="utf-8").strip(),
         "manifest.json": manifest["version"],
         "pyproject.toml": pyproject["project"]["version"],
+        "release-please": release_version,
     }
 
 

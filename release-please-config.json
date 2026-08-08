@@ -4,7 +4,7 @@
     ".": {
       "release-type": "simple",
       "package-name": "Home Assistant FlexGet",
-      "initial-version": "0.1.0",
+      "initial-version": "0.2.0",
       "include-v-in-tag": true,
       "changelog-path": "WHATSNEW.md",
       "changelog-sections": [
