@@ -11,6 +11,7 @@ from custom_components.flexget.diagnostics import async_get_config_entry_diagnos
 from custom_components.flexget.models import (
     FailedEntrySummary,
     FlexGetData,
+    InventoryData,
     OperationalStats,
     PendingApprovalSummary,
 )
@@ -46,6 +47,7 @@ async def test_diagnostics_redact_token(hass: HomeAssistant) -> None:
             pending_approvals=PendingApprovalSummary(None, None),
             operational_stats=OperationalStats(None, None, None, None, None, None),
             task_controls=(),
+            inventory=InventoryData(*([None] * 11)),
             response_time_ms=25,
             last_success=datetime.now(UTC),
         ),

@@ -6,6 +6,7 @@ from custom_components.flexget.models import (
     count_tasks,
     parse_failed_summary,
     parse_history_summary,
+    parse_inventory,
     parse_next_scheduled_run,
     parse_operational_stats,
     parse_pending_summary,
@@ -154,3 +155,32 @@ def test_parse_monitoring_summaries() -> None:
     assert stats.failed_entries == 2
     assert stats.never_run_tasks == 1
     assert stats.success_rate == 50.0
+
+
+def test_parse_inventory_exposes_only_counts() -> None:
+    inventory = parse_inventory(
+        [
+            {"name": "rss", "builtin": True, "debug": False},
+            {"name": "custom", "builtin": False, "debug": True},
+        ],
+        [
+            {"one": {"alive": True, "connected_channels": ["private-channel"]}},
+            {"two": {"alive": False, "connected_channels": []}},
+        ],
+        12,
+        [{"name": "entries"}],
+        [{"name": "movies"}, {"name": "archive"}],
+        [],
+    )
+    assert inventory.plugin_count == 2
+    assert inventory.builtin_plugin_count == 1
+    assert inventory.third_party_plugin_count == 1
+    assert inventory.debug_plugin_count == 1
+    assert inventory.irc_connection_count == 2
+    assert inventory.irc_connected_count == 1
+    assert inventory.irc_connected_channel_count == 1
+    assert inventory.irc_healthy is False
+    assert inventory.tracked_series_count == 12
+    assert inventory.entry_list_count == 1
+    assert inventory.movie_list_count == 2
+    assert inventory.pending_list_count == 0

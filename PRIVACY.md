@@ -32,6 +32,10 @@ entry URLs and raw log, configuration, variable, and crash-report contents are
 not collected.
 Recent execution records are aggregated locally into 24-hour counts and rates;
 individual historical execution records are not exposed as Home Assistant state.
+Optional plugin, IRC, series, and managed-list endpoints are reduced to numeric
+inventory and connection-health totals. Plugin names, IRC servers and channels,
+list names, and series or movie titles are not exposed as states, attributes, or
+diagnostics.
 
 When task controls are explicitly enabled, the integration reads full task
 configuration objects to determine each task's `manual` setting. These objects

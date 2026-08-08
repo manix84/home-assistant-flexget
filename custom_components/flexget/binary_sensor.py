@@ -27,6 +27,7 @@ async def async_setup_entry(
             FlexGetSchedulerEnabledBinarySensor(entry),
             FlexGetApprovalRequiredBinarySensor(entry),
             FlexGetAcceptanceActivityBinarySensor(entry),
+            FlexGetIRCHealthyBinarySensor(entry),
         ]
     )
 
@@ -190,3 +191,22 @@ class FlexGetAcceptanceActivityBinarySensor(FlexGetEntity, BinarySensorEntity):
         if not parsed:
             return None
         return dt_util.utcnow() - dt_util.as_utc(parsed) <= timedelta(hours=24)
+
+
+class FlexGetIRCHealthyBinarySensor(FlexGetEntity, BinarySensorEntity):
+    """Report whether every configured IRC connection is alive."""
+
+    entity_description = BinarySensorEntityDescription(
+        key="irc_healthy",
+        translation_key="irc_healthy",
+        device_class="connectivity",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    )
+
+    def __init__(self, entry: FlexGetConfigEntry) -> None:
+        super().__init__(entry, self.entity_description.key)
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        return data.inventory.irc_healthy if data else None

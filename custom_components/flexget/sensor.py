@@ -314,6 +314,29 @@ DESCRIPTIONS = (
         suggested_display_precision=0,
         value_fn=lambda data: _seconds_since(data.pending_approvals.oldest_at),
     ),
+    *(
+        FlexGetSensorDescription(
+            key=key,
+            translation_key=key,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            suggested_display_precision=0,
+            value_fn=lambda data, field=field: getattr(data.inventory, field),
+        )
+        for key, field in (
+            ("registered_plugin_count", "plugin_count"),
+            ("builtin_plugin_count", "builtin_plugin_count"),
+            ("third_party_plugin_count", "third_party_plugin_count"),
+            ("debug_plugin_count", "debug_plugin_count"),
+            ("irc_connection_count", "irc_connection_count"),
+            ("irc_connected_count", "irc_connected_count"),
+            ("irc_connected_channel_count", "irc_connected_channel_count"),
+            ("tracked_series_count", "tracked_series_count"),
+            ("entry_list_count", "entry_list_count"),
+            ("movie_list_count", "movie_list_count"),
+            ("pending_list_count", "pending_list_count"),
+        )
+    ),
     FlexGetSensorDescription(
         key="last_successful_update",
         translation_key="last_successful_update",

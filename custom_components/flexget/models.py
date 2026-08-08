@@ -86,6 +86,31 @@ class TaskControl:
 
 
 @dataclass(frozen=True, slots=True)
+class InventoryData:
+    """Normalized optional FlexGet component inventory."""
+
+    plugin_count: int | None
+    builtin_plugin_count: int | None
+    third_party_plugin_count: int | None
+    debug_plugin_count: int | None
+    irc_connection_count: int | None
+    irc_connected_count: int | None
+    irc_connected_channel_count: int | None
+    tracked_series_count: int | None
+    entry_list_count: int | None
+    movie_list_count: int | None
+    pending_list_count: int | None
+
+    @property
+    def irc_healthy(self) -> bool | None:
+        if self.irc_connection_count is None or self.irc_connected_count is None:
+            return None
+        return (
+            self.irc_connection_count > 0 and self.irc_connected_count == self.irc_connection_count
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class FlexGetData:
     """One normalized coordinator snapshot."""
 
@@ -110,6 +135,7 @@ class FlexGetData:
     pending_approvals: PendingApprovalSummary
     operational_stats: OperationalStats
     task_controls: tuple[TaskControl, ...]
+    inventory: InventoryData
     response_time_ms: int
     last_success: datetime
 
@@ -173,6 +199,67 @@ def parse_task_controls(data: Any) -> tuple[TaskControl, ...]:
             )
         )
     return tuple(sorted(controls, key=lambda control: control.name))
+
+
+def parse_inventory(
+    plugins: Any,
+    irc_connections: Any,
+    series_total: int | None,
+    entry_lists: Any,
+    movie_lists: Any,
+    pending_lists: Any,
+) -> InventoryData:
+    """Aggregate optional component counts without exposing names or content."""
+    plugin_items = plugins if isinstance(plugins, list) else None
+    irc_items = irc_connections if isinstance(irc_connections, list) else None
+    irc_statuses = (
+        [
+            status
+            for connection in irc_items
+            if isinstance(connection, dict)
+            for status in connection.values()
+            if isinstance(status, dict)
+        ]
+        if irc_items is not None
+        else None
+    )
+    return InventoryData(
+        plugin_count=len(plugin_items) if plugin_items is not None else None,
+        builtin_plugin_count=(
+            sum(plugin.get("builtin") is True for plugin in plugin_items)
+            if plugin_items is not None
+            else None
+        ),
+        third_party_plugin_count=(
+            sum(plugin.get("builtin") is False for plugin in plugin_items)
+            if plugin_items is not None
+            else None
+        ),
+        debug_plugin_count=(
+            sum(plugin.get("debug") is True for plugin in plugin_items)
+            if plugin_items is not None
+            else None
+        ),
+        irc_connection_count=len(irc_statuses) if irc_statuses is not None else None,
+        irc_connected_count=(
+            sum(status.get("alive") is True for status in irc_statuses)
+            if irc_statuses is not None
+            else None
+        ),
+        irc_connected_channel_count=(
+            sum(
+                len(channels)
+                for status in irc_statuses
+                if isinstance((channels := status.get("connected_channels")), list)
+            )
+            if irc_statuses is not None
+            else None
+        ),
+        tracked_series_count=series_total,
+        entry_list_count=len(entry_lists) if isinstance(entry_lists, list) else None,
+        movie_list_count=len(movie_lists) if isinstance(movie_lists, list) else None,
+        pending_list_count=len(pending_lists) if isinstance(pending_lists, list) else None,
+    )
 
 
 def parse_queue(data: Any) -> tuple[int, ActiveTask | None]:

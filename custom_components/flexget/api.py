@@ -243,6 +243,49 @@ class FlexGetClient:
         ]
         return list(await asyncio.gather(*requests))
 
+    async def async_get_plugins(self) -> list[Any]:
+        """Fetch registered plugin metadata without schemas."""
+        return await self._get_all_paginated("plugins/", include_schema="false")
+
+    async def async_get_irc_connections(self) -> Any:
+        """Fetch optional IRC connection status."""
+        return await self._get("irc/connections/")
+
+    async def async_get_series_count(self) -> int | None:
+        """Fetch the tracked-series total without loading the database."""
+        _data, total = await self._get_paginated_summary("series/")
+        return total
+
+    async def async_get_entry_lists(self) -> Any:
+        """Fetch managed entry-list definitions."""
+        return await self._get("entry_list/")
+
+    async def async_get_movie_lists(self) -> Any:
+        """Fetch managed movie-list definitions."""
+        return await self._get("movie_list/")
+
+    async def async_get_pending_lists(self) -> Any:
+        """Fetch managed pending-list definitions."""
+        return await self._get("pending_list/")
+
+    async def _get_all_paginated(self, endpoint: str, **params: str) -> list[Any]:
+        params.update({"per_page": "100", "page": "1"})
+        data, headers = await self._get_with_headers(endpoint, params=params)
+        items = list(data) if isinstance(data, list) else []
+        total = self._header_int(headers, "Total-Count")
+        if total is None or total <= 100:
+            return items
+        pages = await asyncio.gather(
+            *(
+                self._get(endpoint, params={**params, "page": str(page)})
+                for page in range(2, ceil(total / 100) + 1)
+            )
+        )
+        for page in pages:
+            if isinstance(page, list):
+                items.extend(page)
+        return items
+
     async def _get_paginated_summary(self, endpoint: str, **params: str) -> tuple[Any, int | None]:
         params.setdefault("per_page", "1")
         params["page"] = "1"

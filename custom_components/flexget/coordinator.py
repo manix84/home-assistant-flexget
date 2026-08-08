@@ -30,6 +30,7 @@ from .models import (
     count_tasks,
     parse_failed_summary,
     parse_history_summary,
+    parse_inventory,
     parse_next_scheduled_run,
     parse_operational_stats,
     parse_pending_summary,
@@ -75,6 +76,12 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
         self._pending_data: tuple[Any, int | None] = (None, None)
         self._schedule_details: Any = []
         self._recent_executions: Any = None
+        self._plugins_data: Any = None
+        self._irc_data: Any = None
+        self._series_count: int | None = None
+        self._entry_lists_data: Any = None
+        self._movie_lists_data: Any = None
+        self._pending_lists_data: Any = None
         self.consecutive_failures = 0
         self.last_failure: datetime | None = None
         self.controls_enabled = bool(
@@ -136,6 +143,14 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
                 self._task_status_data, self._recent_executions
             ),
             task_controls=parse_task_controls(tasks_data),
+            inventory=parse_inventory(
+                self._plugins_data,
+                self._irc_data,
+                self._series_count,
+                self._entry_lists_data,
+                self._movie_lists_data,
+                self._pending_lists_data,
+            ),
             response_time_ms=round((monotonic() - started) * 1000),
             last_success=now,
         )
@@ -155,6 +170,12 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             self._async_refresh_optional(
                 "pending approvals", self.client.async_get_pending_approval_summary
             ),
+            self._async_refresh_optional("plugins", self.client.async_get_plugins),
+            self._async_refresh_optional("IRC", self.client.async_get_irc_connections),
+            self._async_refresh_optional("series count", self.client.async_get_series_count),
+            self._async_refresh_optional("entry lists", self.client.async_get_entry_lists),
+            self._async_refresh_optional("movie lists", self.client.async_get_movie_lists),
+            self._async_refresh_optional("pending lists", self.client.async_get_pending_lists),
         )
         if self._schedules_data:
             await self._async_refresh_optional(
@@ -193,6 +214,18 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             self._schedule_details = value
         elif name == "recent executions":
             self._recent_executions = value
+        elif name == "plugins":
+            self._plugins_data = value
+        elif name == "IRC":
+            self._irc_data = value
+        elif name == "series count":
+            self._series_count = value if isinstance(value, int) else None
+        elif name == "entry lists":
+            self._entry_lists_data = value
+        elif name == "movie lists":
+            self._movie_lists_data = value
+        elif name == "pending lists":
+            self._pending_lists_data = value
 
     def _scheduler_enabled(self) -> bool | None:
         if self._schedules_data is None:

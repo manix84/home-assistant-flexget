@@ -79,7 +79,8 @@
       "failed_entries": {"name": "Failed entries present"},
       "scheduler_enabled": {"name": "Scheduler enabled"},
       "approval_required": {"name": "Approval required"},
-      "acceptance_activity": {"name": "Acceptance activity"}
+      "acceptance_activity": {"name": "Acceptance activity"},
+      "irc_healthy": {"name": "IRC healthy"}
     },
     "sensor": {
       "version": {"name": "Version"},
@@ -118,7 +119,18 @@
       "time_since_last_acceptance": {"name": "Time since last acceptance"},
       "overdue_retry_count": {"name": "Overdue retries"},
       "highest_retry_count": {"name": "Highest retry count"},
-      "oldest_pending_approval_age": {"name": "Oldest pending approval age"}
+      "oldest_pending_approval_age": {"name": "Oldest pending approval age"},
+      "registered_plugin_count": {"name": "Registered plugins"},
+      "builtin_plugin_count": {"name": "Built-in plugins"},
+      "third_party_plugin_count": {"name": "Third-party plugins"},
+      "debug_plugin_count": {"name": "Debug plugins"},
+      "irc_connection_count": {"name": "IRC connections"},
+      "irc_connected_count": {"name": "Connected IRC connections"},
+      "irc_connected_channel_count": {"name": "Connected IRC channels"},
+      "tracked_series_count": {"name": "Tracked series"},
+      "entry_list_count": {"name": "Entry lists"},
+      "movie_list_count": {"name": "Movie lists"},
+      "pending_list_count": {"name": "Pending lists"}
     },
     "switch": {
       "task_automatic_execution": {"name": "{task} automatic execution"}

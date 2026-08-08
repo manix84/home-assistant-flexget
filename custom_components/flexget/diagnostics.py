@@ -74,6 +74,19 @@ async def async_get_config_entry_diagnostics(
                     }
                     for control in data.task_controls
                 ],
+                "inventory": {
+                    "plugin_count": data.inventory.plugin_count,
+                    "builtin_plugin_count": data.inventory.builtin_plugin_count,
+                    "third_party_plugin_count": data.inventory.third_party_plugin_count,
+                    "debug_plugin_count": data.inventory.debug_plugin_count,
+                    "irc_connection_count": data.inventory.irc_connection_count,
+                    "irc_connected_count": data.inventory.irc_connected_count,
+                    "irc_connected_channel_count": data.inventory.irc_connected_channel_count,
+                    "tracked_series_count": data.inventory.tracked_series_count,
+                    "entry_list_count": data.inventory.entry_list_count,
+                    "movie_list_count": data.inventory.movie_list_count,
+                    "pending_list_count": data.inventory.pending_list_count,
+                },
                 "response_time_ms": data.response_time_ms,
                 "consecutive_failures": coordinator.consecutive_failures,
                 "last_success": data.last_success.isoformat(),

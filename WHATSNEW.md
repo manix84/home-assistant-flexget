@@ -25,6 +25,8 @@ multiple daemon instances and optional, explicitly enabled task controls.
   and polling-health monitoring, with optional endpoint failures kept isolated.
 - Rolling 24-hour task results, acceptance recency, never-run task, retry-health,
   and pending-approval age monitoring.
+- Privacy-conscious plugin, IRC, tracked-series, and managed-list inventory
+  totals without exposing connection, channel, list, or media names.
 - Reauthentication and options for token, display name, and polling interval.
 - Opt-in per-task automatic-execution switches and explicit Run buttons, with
   serialized configuration writes and post-write verification.

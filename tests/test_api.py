@@ -94,6 +94,20 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
         assert await request.json() == {"tasks": ["sort"]}
         return web.json_response({"tasks": [{"id": "one", "name": "sort"}]})
 
+    async def plugins(request: web.Request) -> web.Response:
+        assert request.query["include_schema"] == "false"
+        return web.json_response([{"name": "rss", "builtin": True}], headers={"Total-Count": "1"})
+
+    async def irc_connections(request: web.Request) -> web.Response:
+        return web.json_response([{"announce": {"alive": True, "connected_channels": []}}])
+
+    async def series(request: web.Request) -> web.Response:
+        assert request.query["per_page"] == "1"
+        return web.json_response([], headers={"Total-Count": "12"})
+
+    async def managed_lists(request: web.Request) -> web.Response:
+        return web.json_response([{"id": 1, "name": "example"}])
+
     app = web.Application()
     app.router.add_get("/api/tasks/status/", status)
     app.router.add_get("/api/failed/", failed)
@@ -103,6 +117,12 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
     app.router.add_get("/api/tasks/sort/", task)
     app.router.add_put("/api/tasks/sort/", task)
     app.router.add_post("/api/tasks/execute/", execute)
+    app.router.add_get("/api/plugins/", plugins)
+    app.router.add_get("/api/irc/connections/", irc_connections)
+    app.router.add_get("/api/series/", series)
+    app.router.add_get("/api/entry_list/", managed_lists)
+    app.router.add_get("/api/movie_list/", managed_lists)
+    app.router.add_get("/api/pending_list/", managed_lists)
     server = await aiohttp_server(app)
     async with ClientSession() as session:
         client = FlexGetClient(session, FlexGetEndpoint("127.0.0.1", server.port), "token")
@@ -117,6 +137,12 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
         assert (await client.async_get_task("sort"))["config"]["manual"] is True
         await client.async_update_task("sort", {"manual": True})
         await client.async_execute_task("sort")
+        assert (await client.async_get_plugins())[0]["name"] == "rss"
+        assert len(await client.async_get_irc_connections()) == 1
+        assert await client.async_get_series_count() == 12
+        assert len(await client.async_get_entry_lists()) == 1
+        assert len(await client.async_get_movie_lists()) == 1
+        assert len(await client.async_get_pending_lists()) == 1
 
 
 @pytest.mark.parametrize(

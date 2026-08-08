@@ -73,6 +73,17 @@ async def test_coordinator_builds_shared_snapshot(hass: HomeAssistant) -> None:
             {"succeeded": False, "accepted": 0, "rejected": 0, "failed": 1},
         ]
     ]
+    client.async_get_plugins.return_value = [
+        {"name": "rss", "builtin": True, "debug": False},
+        {"name": "custom", "builtin": False, "debug": True},
+    ]
+    client.async_get_irc_connections.return_value = [
+        {"announce": {"alive": True, "connected_channels": ["one", "two"]}}
+    ]
+    client.async_get_series_count.return_value = 8
+    client.async_get_entry_lists.return_value = [{"name": "entries"}]
+    client.async_get_movie_lists.return_value = [{"name": "movies"}]
+    client.async_get_pending_lists.return_value = []
     coordinator = FlexGetCoordinator(hass, entry, client)
 
     data = await coordinator._async_update_data()
@@ -98,6 +109,11 @@ async def test_coordinator_builds_shared_snapshot(hass: HomeAssistant) -> None:
     assert data.operational_stats.successful_executions == 1
     assert data.operational_stats.failed_executions == 1
     assert data.operational_stats.success_rate == 50.0
+    assert data.inventory.plugin_count == 2
+    assert data.inventory.third_party_plugin_count == 1
+    assert data.inventory.irc_healthy is True
+    assert data.inventory.irc_connected_channel_count == 2
+    assert data.inventory.tracked_series_count == 8
 
     await coordinator._async_update_data()
     client.async_get_schedules.assert_awaited_once()

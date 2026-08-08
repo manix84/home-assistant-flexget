@@ -102,6 +102,35 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
                 return_value=[[{"succeeded": True, "accepted": 2, "rejected": 1, "failed": 0}]]
             ),
         ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_plugins",
+            AsyncMock(
+                return_value=[
+                    {"name": "rss", "builtin": True, "debug": False},
+                    {"name": "custom", "builtin": False, "debug": True},
+                ]
+            ),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_irc_connections",
+            AsyncMock(return_value=[{"announce": {"alive": True, "connected_channels": ["one"]}}]),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_series_count",
+            AsyncMock(return_value=9),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_entry_lists",
+            AsyncMock(return_value=[{"name": "entries"}]),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_movie_lists",
+            AsyncMock(return_value=[{"name": "movies"}]),
+        ),
+        patch(
+            "custom_components.flexget.api.FlexGetClient.async_get_pending_lists",
+            AsyncMock(return_value=[]),
+        ),
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
@@ -130,6 +159,11 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
     assert hass.states.get("switch.sort_sort_anime_automatic_execution").state == "on"
     assert hass.states.get("button.sort_run_extract_all") is not None
     assert hass.states.get("button.sort_run_sort_anime") is not None
+    assert hass.states.get("sensor.sort_registered_plugins").state == "2"
+    assert hass.states.get("sensor.sort_third_party_plugins").state == "1"
+    assert hass.states.get("binary_sensor.sort_irc_healthy").state == "on"
+    assert hass.states.get("sensor.sort_tracked_series").state == "9"
+    assert hass.states.get("sensor.sort_entry_lists").state == "1"
 
     registry = er.async_get(hass)
     assert (

@@ -14,7 +14,8 @@ host are supported when they use different ports.
 - 🧩 Duplicate suppression by normalized `host:port`
 - 🔄 One shared coordinator request cycle per instance
 - 📊 Connectivity, version, task, queue, execution-result, retry-failure,
-  scheduling, pending-approval, and API-health sensors
+  scheduling, pending-approval, API-health, plugin, IRC, series, and managed-list
+  sensors
 - 🔐 Token reauthentication, display-name/token/polling options, and redacted diagnostics
 - 🛡️ Monitoring-only by default, with explicitly enabled per-task automatic-execution
   switches and Run buttons
