@@ -30,6 +30,8 @@ multiple daemon instances and optional, explicitly enabled task controls.
 - Reauthentication and options for token, display name, and polling interval.
 - Opt-in per-task automatic-execution switches and explicit Run buttons, with
   serialized configuration writes and post-write verification.
+- Opt-in **Run now** buttons that bypass interval restrictions and **Learn**
+  buttons that record matches without downloading them.
 - Credential-redacted diagnostics.
 - HACS metadata, automated tests, linting, and repository validation.
 - Local Home Assistant and HACS branding using the official FlexGet icon and

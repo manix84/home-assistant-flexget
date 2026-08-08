@@ -69,7 +69,9 @@
   },
   "entity": {
     "button": {
-      "run_task": {"name": "Run {task}"}
+      "run_task": {"name": "Run {task}"},
+      "run_task_now": {"name": "Run {task} now"},
+      "learn_task": {"name": "Learn {task}"}
     },
     "binary_sensor": {
       "connectivity": {"name": "Connectivity"},

@@ -41,9 +41,11 @@ When task controls are explicitly enabled, the integration reads full task
 configuration objects to determine each task's `manual` setting. These objects
 are processed in memory and are not exposed in entities or diagnostics. A switch
 change sends the latest task configuration back to FlexGet after setting only
-the task-level `manual` value. A Run button sends the selected task name to the
-FlexGet execution API. FlexGet may reformat its YAML file or remove comments
-when its configuration API writes a task.
+the task-level `manual` value. Task buttons send the selected task name and only
+the explicitly selected normal, interval-bypassing, or learn execution mode to
+the FlexGet execution API. Learn mode changes FlexGet's remembered-entry state.
+FlexGet may reformat its YAML file or remove comments when its configuration API
+writes a task.
 
 Requests go directly from Home Assistant to the configured FlexGet endpoint.
 The integration does not intentionally send this data anywhere else.

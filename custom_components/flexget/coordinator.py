@@ -256,12 +256,14 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             raise
         await self.async_request_refresh()
 
-    async def async_execute_task(self, task_name: str) -> None:
+    async def async_execute_task(
+        self, task_name: str, *, now: bool = False, learn: bool = False
+    ) -> None:
         """Queue one explicit task execution."""
         self._ensure_controls_enabled()
         try:
             async with self._control_lock:
-                await self.client.async_execute_task(task_name)
+                await self.client.async_execute_task(task_name, now=now, learn=learn)
         except FlexGetAuthenticationError:
             self.config_entry.async_start_reauth(self.hass)
             raise

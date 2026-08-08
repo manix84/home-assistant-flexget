@@ -18,7 +18,7 @@ host are supported when they use different ports.
   sensors
 - 🔐 Token reauthentication, display-name/token/polling options, and redacted diagnostics
 - 🛡️ Monitoring-only by default, with explicitly enabled per-task automatic-execution
-  switches and Run buttons
+  switches and normal, interval-bypassing, and learn-mode buttons
 
 ## 🚀 Install
 
@@ -57,13 +57,22 @@ token. This is the normal and recommended setup:
 
 Task controls are disabled by default. To enable them, open the integration's
 options and select **Enable task controls**. Home Assistant then creates an
-**Automatic execution** switch and **Run** button for each configured task.
+**Automatic execution** switch and three action buttons for each configured task:
+
+- **Run** queues a normal execution.
+- **Run now** bypasses restrictions from FlexGet's `interval` plugin.
+- **Learn** records matching entries so they are skipped in future, without
+  downloading them.
 
 Turning automatic execution off adds `manual: true` to that task. Turning it on
 sets `manual: false`, overriding any manual-only setting inherited from a
-template. The Run button explicitly queues that task and can still run a task
-whose automatic execution switch is off. A switch change is rejected while its
-task is running.
+template. The execution buttons explicitly queue that task and can still run a
+task whose automatic execution switch is off. A switch change is rejected while
+its task is running.
+
+> ⚠️ **Learn mode:** Learning changes FlexGet's remembered-entry state. Review
+> the task before pressing **Learn**, because matching entries may be skipped by
+> later normal executions.
 
 > ⚠️ **Configuration warning:** FlexGet's task update API rewrites its YAML
 > configuration and may change layout or remove comments. Back up commented or

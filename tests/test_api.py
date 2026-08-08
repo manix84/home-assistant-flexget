@@ -62,6 +62,7 @@ async def test_client_reads_history_total_count(aiohttp_server, socket_enabled) 
 
 async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket_enabled) -> None:
     """Query monitoring endpoints with bounded payloads."""
+    execution_payloads = []
 
     async def status(request: web.Request) -> web.Response:
         assert request.query["include_execution"] == "true"
@@ -91,7 +92,7 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
         return web.json_response({"name": "sort", "config": {"manual": True}})
 
     async def execute(request: web.Request) -> web.Response:
-        assert await request.json() == {"tasks": ["sort"]}
+        execution_payloads.append(await request.json())
         return web.json_response({"tasks": [{"id": "one", "name": "sort"}]})
 
     async def plugins(request: web.Request) -> web.Response:
@@ -137,12 +138,19 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
         assert (await client.async_get_task("sort"))["config"]["manual"] is True
         await client.async_update_task("sort", {"manual": True})
         await client.async_execute_task("sort")
+        await client.async_execute_task("sort", now=True)
+        await client.async_execute_task("sort", learn=True)
         assert (await client.async_get_plugins())[0]["name"] == "rss"
         assert len(await client.async_get_irc_connections()) == 1
         assert await client.async_get_series_count() == 12
         assert len(await client.async_get_entry_lists()) == 1
         assert len(await client.async_get_movie_lists()) == 1
         assert len(await client.async_get_pending_lists()) == 1
+    assert execution_payloads == [
+        {"tasks": ["sort"]},
+        {"tasks": ["sort"], "now": True},
+        {"tasks": ["sort"], "learn": True},
+    ]
 
 
 @pytest.mark.parametrize(

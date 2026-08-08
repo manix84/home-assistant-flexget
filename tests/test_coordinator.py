@@ -195,8 +195,14 @@ async def test_opt_in_task_controls_preserve_config_and_confirm_changes(
 
     coordinator.async_request_refresh.reset_mock()
     await coordinator.async_execute_task("sort")
-    client.async_execute_task.assert_awaited_once_with("sort")
+    client.async_execute_task.assert_awaited_once_with("sort", now=False, learn=False)
     coordinator.async_request_refresh.assert_awaited_once()
+
+    await coordinator.async_execute_task("sort", now=True)
+    client.async_execute_task.assert_awaited_with("sort", now=True, learn=False)
+
+    await coordinator.async_execute_task("sort", learn=True)
+    client.async_execute_task.assert_awaited_with("sort", now=False, learn=True)
 
     coordinator.data = SimpleNamespace(active_task=SimpleNamespace(name="sort"))
     with pytest.raises(FlexGetError, match="while it is running"):

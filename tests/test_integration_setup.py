@@ -159,6 +159,8 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
     assert hass.states.get("switch.sort_sort_anime_automatic_execution").state == "on"
     assert hass.states.get("button.sort_run_extract_all") is not None
     assert hass.states.get("button.sort_run_sort_anime") is not None
+    assert hass.states.get("button.sort_run_sort_anime_now") is not None
+    assert hass.states.get("button.sort_learn_sort_anime") is not None
     assert hass.states.get("sensor.sort_registered_plugins").state == "2"
     assert hass.states.get("sensor.sort_third_party_plugins").state == "1"
     assert hass.states.get("binary_sensor.sort_irc_healthy").state == "on"
@@ -171,6 +173,10 @@ async def test_entry_registers_useful_diagnostic_entities(hass: HomeAssistant) -
         is EntityCategory.CONFIG
     )
     assert registry.async_get("button.sort_run_sort_anime").entity_category is EntityCategory.CONFIG
+    assert (
+        registry.async_get("button.sort_run_sort_anime_now").entity_category
+        is EntityCategory.CONFIG
+    )
     for entity_id in (
         "sensor.sort_configured_tasks",
         "sensor.sort_queued_tasks",

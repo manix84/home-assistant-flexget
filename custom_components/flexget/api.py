@@ -119,11 +119,16 @@ class FlexGetClient:
             json={"name": task_name, "config": config},
         )
 
-    async def async_execute_task(self, task_name: str) -> None:
+    async def async_execute_task(
+        self, task_name: str, *, now: bool = False, learn: bool = False
+    ) -> None:
         """Queue one explicit task execution without streaming logs."""
-        data, _headers = await self._request_with_headers(
-            "POST", "tasks/execute/", json={"tasks": [task_name]}
-        )
+        payload: dict[str, Any] = {"tasks": [task_name]}
+        if now:
+            payload["now"] = True
+        if learn:
+            payload["learn"] = True
+        data, _headers = await self._request_with_headers("POST", "tasks/execute/", json=payload)
         tasks = data.get("tasks") if isinstance(data, dict) else None
         if not isinstance(tasks, list) or not any(
             isinstance(task, dict) and task.get("name") == task_name for task in tasks
