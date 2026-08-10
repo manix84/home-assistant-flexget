@@ -70,11 +70,11 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
         self._active_since: datetime | None = None
         self._extended_updated_at: datetime | None = None
         self._schedules_data: Any = None
-        self._history_data: tuple[Any, int | None] = ([], None)
-        self._task_status_data: Any = []
+        self._history_data: tuple[Any, int | None] = (None, None)
+        self._task_status_data: Any = None
         self._failed_data: tuple[Any, int | None] = (None, None)
         self._pending_data: tuple[Any, int | None] = (None, None)
-        self._schedule_details: Any = []
+        self._schedule_details: Any = None
         self._recent_executions: Any = None
         self._plugins_data: Any = None
         self._irc_data: Any = None
@@ -199,17 +199,26 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             raise
         except FlexGetError as err:
             _LOGGER.debug("Unable to refresh FlexGet %s: %s", name, err)
+            self._set_optional_value(name, None)
             return
+        self._set_optional_value(name, value)
+
+    def _set_optional_value(self, name: str, value: Any) -> None:
+        """Store optional data, clearing dependent caches when it becomes unavailable."""
         if name == "schedules":
             self._schedules_data = value
+            if value is None:
+                self._schedule_details = None
         elif name == "history":
-            self._history_data = value
+            self._history_data = value if isinstance(value, tuple) else (None, None)
         elif name == "task status":
             self._task_status_data = value
+            if value is None:
+                self._recent_executions = None
         elif name == "failed entries":
-            self._failed_data = value
+            self._failed_data = value if isinstance(value, tuple) else (None, None)
         elif name == "pending approvals":
-            self._pending_data = value
+            self._pending_data = value if isinstance(value, tuple) else (None, None)
         elif name == "schedule details":
             self._schedule_details = value
         elif name == "recent executions":

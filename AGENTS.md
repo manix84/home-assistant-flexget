@@ -7,7 +7,8 @@ and GitHub Copilot. Follow it for every change in this repository.
 
 Build a dependable, privacy-respecting Home Assistant integration that monitors
 multiple FlexGet daemon APIs. Each `host:port` is an independent config entry
-and device. The first releases are deliberately read-only.
+and device. Monitoring is the default; narrowly scoped controls may be added only
+when they are deliberately designed, secured, documented, tested, and opt-in.
 
 Optimize for correctness, security, predictable Home Assistant behavior, and
 maintainable code—not maximum feature count.
@@ -43,8 +44,10 @@ history or force-push unless explicitly requested.
 - Use config entries for credentials and mutable options for token/name/polling
   changes. Do not introduce YAML configuration.
 - Preserve availability isolation: one failed daemon must not affect another.
-- Keep control actions, task execution, and daemon management out of scope until
-  they are deliberately designed, secured, and approved.
+- Keep daemon management, arbitrary configuration editing, and destructive
+  actions out of scope. Any approved task control must remain disabled by
+  default, use a narrowly defined API operation, verify configuration writes,
+  serialize mutations, and document its consequences.
 
 ## 🔐 Security and privacy
 

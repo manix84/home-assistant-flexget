@@ -6,7 +6,6 @@ import asyncio
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from math import ceil
 from typing import Any
 from urllib.parse import quote
 
@@ -156,58 +155,17 @@ class FlexGetClient:
 
     async def async_get_task_status(self) -> Any:
         """Fetch the latest execution for each task."""
-        params = {
-            "per_page": "100",
-            "page": "1",
-            "sort_by": "last_execution_time",
-            "order": "desc",
-            "include_execution": "true",
-        }
-        data, headers = await self._get_with_headers(
+        data, _total = await self._get_paginated_items(
             "tasks/status/",
-            params=params,
+            sort_by="last_execution_time",
+            order="desc",
+            include_execution="true",
         )
-        total = self._header_int(headers, "Total-Count")
-        if total is None or total <= 100:
-            return data
-        remaining = await asyncio.gather(
-            *(
-                self._get("tasks/status/", params={**params, "page": str(page)})
-                for page in range(2, ceil(total / 100) + 1)
-            )
-        )
-        statuses = list(data) if isinstance(data, list) else []
-        for page in remaining:
-            if isinstance(page, list):
-                statuses.extend(page)
-        return statuses
+        return data
 
     async def async_get_failed_summary(self) -> tuple[Any, int | None]:
         """Fetch the newest retry failure and total count."""
-        data, total = await self._get_paginated_summary(
-            "failed/", per_page="100", sort_by="failure_time", order="desc"
-        )
-        if total is None or total <= 100:
-            return data, total
-        remaining = await asyncio.gather(
-            *(
-                self._get(
-                    "failed/",
-                    params={
-                        "per_page": "100",
-                        "page": str(page),
-                        "sort_by": "failure_time",
-                        "order": "desc",
-                    },
-                )
-                for page in range(2, ceil(total / 100) + 1)
-            )
-        )
-        entries = list(data) if isinstance(data, list) else []
-        for page in remaining:
-            if isinstance(page, list):
-                entries.extend(page)
-        return entries, total
+        return await self._get_paginated_items("failed/", sort_by="failure_time", order="desc")
 
     async def async_get_pending_approval_summary(self) -> tuple[Any, int | None]:
         """Fetch the oldest unapproved entry and total count."""
@@ -227,26 +185,21 @@ class FlexGetClient:
         return list(await asyncio.gather(*requests))
 
     async def async_get_recent_executions(self, statuses: Any, since: datetime) -> list[Any]:
-        """Fetch up to 100 executions per task since the requested time."""
+        """Fetch every execution per task since the requested time."""
         if not isinstance(statuses, list):
             return []
-        requests = [
-            self._get(
+        execution_groups = []
+        for status in statuses:
+            if not isinstance(status, dict) or not isinstance(status.get("id"), int):
+                continue
+            executions, _total = await self._get_paginated_items(
                 f"tasks/status/{status['id']}/executions/",
-                params={
-                    "per_page": "100",
-                    "page": "1",
-                    "sort_by": "start",
-                    "order": "desc",
-                    "start_date": since.isoformat(),
-                    "succeeded": "false",
-                    "produced": "false",
-                },
+                sort_by="start",
+                order="desc",
+                start_date=since.isoformat(),
             )
-            for status in statuses
-            if isinstance(status, dict) and isinstance(status.get("id"), int)
-        ]
-        return list(await asyncio.gather(*requests))
+            execution_groups.append(executions)
+        return execution_groups
 
     async def async_get_plugins(self) -> list[Any]:
         """Fetch registered plugin metadata without schemas."""
@@ -274,22 +227,27 @@ class FlexGetClient:
         return await self._get("pending_list/")
 
     async def _get_all_paginated(self, endpoint: str, **params: str) -> list[Any]:
+        items, _total = await self._get_paginated_items(endpoint, **params)
+        return items
+
+    async def _get_paginated_items(
+        self, endpoint: str, **params: str
+    ) -> tuple[list[Any], int | None]:
+        """Fetch every page sequentially to bound load on the daemon."""
         params.update({"per_page": "100", "page": "1"})
         data, headers = await self._get_with_headers(endpoint, params=params)
         items = list(data) if isinstance(data, list) else []
         total = self._header_int(headers, "Total-Count")
         if total is None or total <= 100:
-            return items
-        pages = await asyncio.gather(
-            *(
-                self._get(endpoint, params={**params, "page": str(page)})
-                for page in range(2, ceil(total / 100) + 1)
-            )
-        )
-        for page in pages:
-            if isinstance(page, list):
-                items.extend(page)
-        return items
+            return items, total
+        page = 2
+        while len(items) < total:
+            page_data = await self._get(endpoint, params={**params, "page": str(page)})
+            if not isinstance(page_data, list) or not page_data:
+                break
+            items.extend(page_data)
+            page += 1
+        return items, total
 
     async def _get_paginated_summary(self, endpoint: str, **params: str) -> tuple[Any, int | None]:
         params.setdefault("per_page", "1")

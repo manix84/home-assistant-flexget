@@ -82,7 +82,8 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
 
     async def executions(request: web.Request) -> web.Response:
         assert request.query["start_date"] == "2026-08-05T00:00:00+00:00"
-        assert request.query["produced"] == "false"
+        assert "succeeded" not in request.query
+        assert "produced" not in request.query
         return web.json_response([{"succeeded": True, "accepted": 1}])
 
     async def task(request: web.Request) -> web.Response:
@@ -151,6 +152,47 @@ async def test_client_reads_optional_monitoring_endpoints(aiohttp_server, socket
         {"tasks": ["sort"], "now": True},
         {"tasks": ["sort"], "learn": True},
     ]
+
+
+async def test_client_fetches_all_diagnostic_pages_sequentially(
+    aiohttp_server, socket_enabled
+) -> None:
+    """Read complete aggregates without outcome filters or request fan-out."""
+    requests = []
+
+    def page_items(page: int) -> list[dict[str, int | bool]]:
+        count = 1 if page == 3 else 100
+        return [{"id": page * 100 + item, "succeeded": item % 2 == 0} for item in range(count)]
+
+    async def paginated(request: web.Request) -> web.Response:
+        page = int(request.query["page"])
+        requests.append((request.path, page, dict(request.query)))
+        return web.json_response(page_items(page), headers={"Total-Count": "201"})
+
+    app = web.Application()
+    app.router.add_get("/api/failed/", paginated)
+    app.router.add_get("/api/tasks/status/4/executions/", paginated)
+    server = await aiohttp_server(app)
+    async with ClientSession() as session:
+        client = FlexGetClient(session, FlexGetEndpoint("127.0.0.1", server.port), "token")
+        failed, total = await client.async_get_failed_summary()
+        recent = await client.async_get_recent_executions(
+            [{"id": 4}], datetime.fromisoformat("2026-08-05T00:00:00+00:00")
+        )
+
+    assert total == 201
+    assert len(failed) == 201
+    assert len(recent[0]) == 201
+    assert [(path, page) for path, page, _query in requests] == [
+        ("/api/failed/", 1),
+        ("/api/failed/", 2),
+        ("/api/failed/", 3),
+        ("/api/tasks/status/4/executions/", 1),
+        ("/api/tasks/status/4/executions/", 2),
+        ("/api/tasks/status/4/executions/", 3),
+    ]
+    execution_queries = [query for path, _page, query in requests if path.endswith("/executions/")]
+    assert all("succeeded" not in query and "produced" not in query for query in execution_queries)
 
 
 @pytest.mark.parametrize(

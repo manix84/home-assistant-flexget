@@ -122,7 +122,7 @@ class FlexGetData:
     queued_count: int
     queued_tasks: tuple[str, ...]
     active_task: ActiveTask | None
-    schedule_count: int
+    schedule_count: int | None
     scheduled_tasks: tuple[str, ...]
     accepted_count: int | None
     last_accepted_task: str | None
@@ -210,7 +210,11 @@ def parse_inventory(
     pending_lists: Any,
 ) -> InventoryData:
     """Aggregate optional component counts without exposing names or content."""
-    plugin_items = plugins if isinstance(plugins, list) else None
+    plugin_items = (
+        [plugin for plugin in plugins if isinstance(plugin, dict)]
+        if isinstance(plugins, list)
+        else None
+    )
     irc_items = irc_connections if isinstance(irc_connections, list) else None
     irc_statuses = (
         [
@@ -307,9 +311,11 @@ def parse_queued_task_names(data: Any) -> tuple[str, ...]:
     return tuple(names)
 
 
-def parse_schedules(data: Any) -> tuple[int, tuple[str, ...]]:
+def parse_schedules(data: Any) -> tuple[int | None, tuple[str, ...]]:
     """Return schedule count and unique task patterns."""
-    schedules = data if isinstance(data, list) else []
+    if not isinstance(data, list):
+        return None, ()
+    schedules = data
     task_names: set[str] = set()
     for schedule in schedules:
         if not isinstance(schedule, dict):
@@ -328,7 +334,7 @@ def parse_history_summary(
     """Return total accepted entries and newest task/time metadata."""
     entries = data if isinstance(data, list) else []
     latest = entries[0] if entries and isinstance(entries[0], dict) else {}
-    count = total_count if total_count is not None else len(entries)
+    count = total_count if total_count is not None else (len(entries) if data is not None else None)
     return count, _optional_str(latest.get("task")), _optional_str(latest.get("time"))
 
 
