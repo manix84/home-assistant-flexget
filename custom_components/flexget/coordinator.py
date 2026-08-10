@@ -70,11 +70,11 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
         self._active_since: datetime | None = None
         self._extended_updated_at: datetime | None = None
         self._schedules_data: Any = None
-        self._history_data: tuple[Any, int | None] = ([], None)
-        self._task_status_data: Any = []
+        self._history_data: tuple[Any, int | None] = (None, None)
+        self._task_status_data: Any = None
         self._failed_data: tuple[Any, int | None] = (None, None)
         self._pending_data: tuple[Any, int | None] = (None, None)
-        self._schedule_details: Any = []
+        self._schedule_details: Any = None
         self._recent_executions: Any = None
         self._plugins_data: Any = None
         self._irc_data: Any = None
@@ -199,17 +199,26 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             raise
         except FlexGetError as err:
             _LOGGER.debug("Unable to refresh FlexGet %s: %s", name, err)
+            self._set_optional_value(name, None)
             return
+        self._set_optional_value(name, value)
+
+    def _set_optional_value(self, name: str, value: Any) -> None:
+        """Store optional data, clearing dependent caches when it becomes unavailable."""
         if name == "schedules":
             self._schedules_data = value
+            if value is None:
+                self._schedule_details = None
         elif name == "history":
-            self._history_data = value
+            self._history_data = value if isinstance(value, tuple) else (None, None)
         elif name == "task status":
             self._task_status_data = value
+            if value is None:
+                self._recent_executions = None
         elif name == "failed entries":
-            self._failed_data = value
+            self._failed_data = value if isinstance(value, tuple) else (None, None)
         elif name == "pending approvals":
-            self._pending_data = value
+            self._pending_data = value if isinstance(value, tuple) else (None, None)
         elif name == "schedule details":
             self._schedule_details = value
         elif name == "recent executions":
@@ -256,12 +265,14 @@ class FlexGetCoordinator(DataUpdateCoordinator[FlexGetData]):
             raise
         await self.async_request_refresh()
 
-    async def async_execute_task(self, task_name: str) -> None:
+    async def async_execute_task(
+        self, task_name: str, *, now: bool = False, learn: bool = False
+    ) -> None:
         """Queue one explicit task execution."""
         self._ensure_controls_enabled()
         try:
             async with self._control_lock:
-                await self.client.async_execute_task(task_name)
+                await self.client.async_execute_task(task_name, now=now, learn=learn)
         except FlexGetAuthenticationError:
             self.config_entry.async_start_reauth(self.hass)
             raise

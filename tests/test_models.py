@@ -161,6 +161,7 @@ def test_parse_inventory_exposes_only_counts() -> None:
     inventory = parse_inventory(
         [
             {"name": "rss", "builtin": True, "debug": False},
+            "malformed",
             {"name": "custom", "builtin": False, "debug": True},
         ],
         [

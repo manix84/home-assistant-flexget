@@ -142,20 +142,46 @@ async def test_extended_endpoint_failure_does_not_hide_core_status(hass: HomeAss
     client.async_get_tasks.return_value = ["sort"]
     client.async_get_queue.return_value = []
     client.async_get_schedules.side_effect = FlexGetConnectionError("not available")
-    client.async_get_history_summary.return_value = ([], None)
+    client.async_get_history_summary.side_effect = FlexGetConnectionError("not available")
     client.async_get_task_status.side_effect = FlexGetConnectionError("not available")
     client.async_get_failed_summary.side_effect = FlexGetConnectionError("not available")
     client.async_get_pending_approval_summary.side_effect = FlexGetConnectionError("not available")
+    client.async_get_plugins.side_effect = FlexGetConnectionError("not available")
+    client.async_get_irc_connections.side_effect = FlexGetConnectionError("not available")
+    client.async_get_series_count.side_effect = FlexGetConnectionError("not available")
+    client.async_get_entry_lists.side_effect = FlexGetConnectionError("not available")
+    client.async_get_movie_lists.side_effect = FlexGetConnectionError("not available")
+    client.async_get_pending_lists.side_effect = FlexGetConnectionError("not available")
     client.async_get_recent_executions.side_effect = FlexGetConnectionError("not available")
     coordinator = FlexGetCoordinator(hass, entry, client)
+    coordinator._schedules_data = [{"tasks": ["stale"]}]
+    coordinator._history_data = ([{"task": "stale"}], 10)
+    coordinator._task_status_data = [{"name": "stale", "last_execution": {"succeeded": True}}]
+    coordinator._failed_data = ([{"title": "stale"}], 4)
+    coordinator._pending_data = ([{"added": "2026-08-05T12:00:00+00:00"}], 3)
+    coordinator._schedule_details = [{"next_run_time": "2026-08-05T14:00:00+00:00"}]
+    coordinator._recent_executions = [[{"succeeded": True}]]
+    coordinator._plugins_data = [{"builtin": True}]
+    coordinator._irc_data = [{"one": {"alive": True, "connected_channels": []}}]
+    coordinator._series_count = 5
+    coordinator._entry_lists_data = [{}]
+    coordinator._movie_lists_data = [{}]
+    coordinator._pending_lists_data = [{}]
 
     data = await coordinator._async_update_data()
     assert data.version == "3.19.31"
     assert data.task_count == 1
-    assert data.schedule_count == 0
-    assert data.accepted_count == 0
+    assert data.schedule_count is None
+    assert data.accepted_count is None
+    assert data.last_execution is None
+    assert data.next_scheduled_run is None
+    assert data.operational_stats.successful_executions is None
     assert data.failed_entries.count is None
     assert data.pending_approvals.count is None
+    assert data.inventory.plugin_count is None
+    assert data.inventory.irc_connection_count is None
+    assert data.inventory.tracked_series_count is None
+    assert data.inventory.entry_list_count is None
 
 
 async def test_opt_in_task_controls_preserve_config_and_confirm_changes(
@@ -195,8 +221,14 @@ async def test_opt_in_task_controls_preserve_config_and_confirm_changes(
 
     coordinator.async_request_refresh.reset_mock()
     await coordinator.async_execute_task("sort")
-    client.async_execute_task.assert_awaited_once_with("sort")
+    client.async_execute_task.assert_awaited_once_with("sort", now=False, learn=False)
     coordinator.async_request_refresh.assert_awaited_once()
+
+    await coordinator.async_execute_task("sort", now=True)
+    client.async_execute_task.assert_awaited_with("sort", now=True, learn=False)
+
+    await coordinator.async_execute_task("sort", learn=True)
+    client.async_execute_task.assert_awaited_with("sort", now=False, learn=True)
 
     coordinator.data = SimpleNamespace(active_task=SimpleNamespace(name="sort"))
     with pytest.raises(FlexGetError, match="while it is running"):
